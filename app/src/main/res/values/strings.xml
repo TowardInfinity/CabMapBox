@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">CabMapBox</string>
+    <string name="access_token">pk.eyJ1IjoidG8taW4iLCJhIjoiY2pxajhzbmFxMDE2bjQzczFyNHg3Z2VoNyJ9.PDQxc5OIw69IPfPQM22j_A</string>
+    <string name="email_id">Email ID</string>
+    <string name="login">Login</string>
+    <string name="registration">Registration</string>
+    <string name="password">Password</string>
+    <string name="customer_registration">Customer</string>
+    <string name="customer">Customer</string>
+    <string name="user_type">User Type</string>
+    <string name="driver">Driver</string>
+    <string name="driver_n">Driver</string>
+    <string name="logout">LogOut</string>
+    <string name="start_navigation">Start Navigation</string>
+    <string name="title_activity_main2">Main2Activity</string>
+    <string name="this_is_redirected">This is Redirected</string>
+</resources>
