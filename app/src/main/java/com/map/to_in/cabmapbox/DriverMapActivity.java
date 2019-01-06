@@ -15,9 +15,6 @@ public class DriverMapActivity extends AppCompatActivity {
     private Button logout;
     private MapView mapView;
 
-    public DriverMapActivity() {
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
