@@ -43,6 +43,9 @@ dependencies {
     implementation 'com.mapbox.mapboxsdk:mapbox-android-plugin-locationlayer:0.11.0'
     implementation 'com.mapbox.mapboxsdk:mapbox-android-navigation:0.26.0'
     implementation 'com.mapbox.mapboxsdk:mapbox-android-navigation-ui:0.26.0'
+
+    //GeoFire
+    implementation 'com.firebase:geofire-android:2.1.1'
 }
 
 apply plugin: 'com.google.gms.google-services'
