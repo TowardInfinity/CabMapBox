@@ -14,6 +14,8 @@ import android.widget.Toast;
 
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
+import com.firebase.geofire.GeoQuery;
+import com.firebase.geofire.GeoQueryEventListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -52,27 +54,15 @@ import retrofit2.Response;
 
 public class CustomerMapActivity extends AppCompatActivity implements OnMapReadyCallback, LocationEngineListener, PermissionsListener {
 
-//    implements OnMapReadyCallback, LocationEngineListener, PermissionsListener
-
-    private Button logout;
+    private Button logout, requestBtn;
     private MapView mapView;
     private MapboxMap map;
     private PermissionsManager permissionsManager;
     private LocationEngine locationEngine;
     private LocationLayerPlugin locationLayerPlugin;
-    private NavigationMapRoute navigationMapRoute;
     private Location myLocation;
-    private DirectionsRoute currentRoute;
-    private String customerID;
-    private static final String TAG = "CustomerMapActivity";
-
-//    private Button logout;
-//    private MapView mapView;
-//    private MapboxMap map;
-//    private PermissionsManager permissionsManager;
-//    private LocationEngine locationEngine;
-//    private LocationLayerPlugin locationLayerPlugin;
-//    private Location myLocation;
+    private LatLng pickupLocation;
+    private LatLng destinationLatLng = new LatLng(0.0,0.0);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +71,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
         setContentView(R.layout.activity_customer_map);
         mapView = (MapView) findViewById(R.id.mapViewCustomer);
         mapView.onCreate(savedInstanceState);
+        mapView.getMapAsync(this);
 
         logout = findViewById(R.id.logout);
         logout.setOnClickListener(new View.OnClickListener() {
@@ -91,6 +82,119 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
                 startActivity(intent);
                 finish();
                 return;
+            }
+        });
+
+        requestBtn = findViewById(R.id.request);
+        requestBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String userID = FirebaseAuth.getInstance().getCurrentUser().getUid(); //A small change in order for bug fixing, as app crashed as i logout
+
+                DatabaseReference ref = FirebaseDatabase.getInstance().getReference("CustomerRequest");
+                GeoFire geoFire = new GeoFire(ref);
+                geoFire.setLocation(userID, new GeoLocation(myLocation.getLatitude(), myLocation.getLongitude()));
+
+                pickupLocation = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
+                map.addMarker(new MarkerOptions().position(pickupLocation).title("Pickup Here"));
+                destinationLatLng = pickupLocation;
+                requestBtn.setText(getString(R.string.getting_your_driver));
+
+                getClosestDriver();
+            }
+        });
+    }
+
+    private int radius = 1;
+    private Boolean driverFound = false;
+    private String driverFoundID;
+
+    private void getClosestDriver(){
+        DatabaseReference driverLocation = FirebaseDatabase.getInstance().getReference().child("DriverAvailable");
+
+        GeoFire geoFire = new GeoFire(driverLocation);
+
+        GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(pickupLocation.getLatitude(), pickupLocation.getLongitude()), radius);
+        geoQuery.removeAllListeners();  //Removes all data stored
+
+        geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
+            @Override
+            public void onKeyEntered(String key, GeoLocation location) {
+                if(!driverFound){
+                    driverFound = true;
+                    driverFoundID = key;
+                    Log.d("Key : ", driverFoundID);
+
+                    DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Driver").child(driverFoundID);
+                    String customerID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    HashMap map = new HashMap<String, String>();
+                    map.put("CustomerRideID", customerID);
+                    map.put("destinationLat", destinationLatLng.getLatitude());
+                    map.put("destinationLng", destinationLatLng.getLongitude());
+                    driverRef.updateChildren(map);
+                    Toast.makeText(getApplicationContext(),"Driver Found, Wait.", Toast.LENGTH_LONG).show();
+                    requestBtn.setText(getString(R.string.DriverSearch));
+                    getDriverLocation();
+
+                }
+            }
+
+            @Override
+            public void onKeyExited(String key) {
+            }
+
+            @Override
+            public void onKeyMoved(String key, GeoLocation location) {
+
+            }
+
+            @Override
+            public void onGeoQueryReady() {
+                if(!driverFound){
+                    radius++;
+                    getClosestDriver();
+                    Log.d("Radius : ", String.valueOf(radius));
+                }
+            }
+
+            @Override
+            public void onGeoQueryError(DatabaseError error) {
+
+            }
+        });
+    }
+
+    private void getDriverLocation(){
+        requestBtn.setText(getString(R.string.DriverSearch));
+        DatabaseReference driverLocationRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Customer").child(driverFoundID);
+        driverLocationRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()) {
+
+                    Map<String, Object> dataMap = (Map<String, Object>) dataSnapshot.getValue();
+                    double locationLat = 25.625818;
+                    double locationLng = 85.106596;
+
+                    if (dataMap.get("destinationLat") != null && dataMap.get("destinationLng") != null) {
+                        String customerID = dataMap.get("DriverRideID").toString();
+                        locationLat = Double.parseDouble(dataMap.get("destinationLat").toString());
+                        locationLng = Double.parseDouble(dataMap.get("destinationLng").toString());
+                        Toast.makeText(getApplicationContext(), "Destination to Driver Found, Driver Approaching Here.", Toast.LENGTH_LONG).show();
+                        requestBtn.setText(getString(R.string.driverFound));
+                    } else {
+                        Toast.makeText(getApplicationContext(), "Destination to Driver Not Found.", Toast.LENGTH_LONG).show();
+                        requestBtn.setText(getString(R.string.noDirection));
+                    }
+                    LatLng driverLatLng = new LatLng(locationLat, locationLng);
+                    map.addMarker(new MarkerOptions().position(driverLatLng).title("Your Driver"));
+//                    getRouteToMarker(driverLatLng);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
             }
         });
     }
@@ -155,7 +259,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
 
     @Override // When User Denies the Permissions
     public void onExplanationNeeded(List<String> permissionsToExplain) {
-        // Toast
+        Toast.makeText(getApplicationContext(),"Without these permissions, you Wont be able to use location Services.", Toast.LENGTH_LONG).show();
     }
 
     @Override

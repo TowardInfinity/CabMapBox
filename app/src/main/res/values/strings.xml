@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">CabMapBox</string>
+    <string name="app_name">Cab Services</string>
     <string name="access_token">pk.eyJ1IjoidG8taW4iLCJhIjoiY2pxajhzbmFxMDE2bjQzczFyNHg3Z2VoNyJ9.PDQxc5OIw69IPfPQM22j_A</string>
     <string name="email_id">Email ID</string>
     <string name="login">Login</string>
@@ -14,4 +14,8 @@
     <string name="start_navigation">Start Navigation</string>
     <string name="title_activity_main2">Main2Activity</string>
     <string name="this_is_redirected">This is Redirected</string>
+    <string name="getting_your_driver">Getting Your Driver</string>
+    <string name="DriverSearch">Looking For Driver Location</string>
+    <string name="driverFound">Driver Found</string>
+    <string name="noDirection">Not Able to Direct</string>
 </resources>

@@ -66,7 +66,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     private Location myLocation;
     private DirectionsRoute currentRoute;
     private String customerID;
-    private static final String TAG = "CustomerMapActivity";
+    private static final String TAG = "DriverMapActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -281,7 +281,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
 
     @Override // When User Denies the Permissions
     public void onExplanationNeeded(List<String> permissionsToExplain) {
-        // Toast
+        Toast.makeText(getApplicationContext(),"Without these permissions, you Wont be able to use location Services.", Toast.LENGTH_LONG).show();
     }
 
     @Override
