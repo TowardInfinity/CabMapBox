@@ -3,7 +3,6 @@ package com.map.to_in.cabmapbox;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.location.Location;
-import android.location.LocationListener;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -28,9 +27,6 @@ import com.mapbox.android.core.location.LocationEnginePriority;
 import com.mapbox.android.core.location.LocationEngineProvider;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
-import com.mapbox.api.directions.v5.models.DirectionsResponse;
-import com.mapbox.api.directions.v5.models.DirectionsRoute;
-import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
@@ -41,16 +37,11 @@ import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.plugins.locationlayer.LocationLayerPlugin;
-import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute;
-import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class CustomerMapActivity extends AppCompatActivity implements OnMapReadyCallback, LocationEngineListener, PermissionsListener {
 
@@ -127,15 +118,14 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
 
                     DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Driver").child(driverFoundID);
                     String customerID = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                    HashMap map = new HashMap<String, String>();
-                    map.put("CustomerRideID", customerID);
-                    map.put("destinationLat", destinationLatLng.getLatitude());
-                    map.put("destinationLng", destinationLatLng.getLongitude());
-                    driverRef.updateChildren(map);
+                    HashMap dataMap = new HashMap<String, String>();
+                    dataMap.put("CustomerRideID", customerID);
+                    dataMap.put("destinationLat", destinationLatLng.getLatitude());
+                    dataMap.put("destinationLng", destinationLatLng.getLongitude());
+                    driverRef.updateChildren(dataMap);
                     Toast.makeText(getApplicationContext(),"Driver Found, Wait.", Toast.LENGTH_LONG).show();
                     requestBtn.setText(getString(R.string.DriverSearch));
                     getDriverLocation();
-
                 }
             }
 
@@ -247,6 +237,9 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     @Override
     public void onConnected() {
         locationEngine.requestLocationUpdates();
+            locationEngine.setInterval(1000);
+            locationEngine.setFastestInterval(1000);
+            locationEngine.setPriority(LocationEnginePriority.HIGH_ACCURACY); //high Accuracy decrease if needed
     }
 
     @Override
