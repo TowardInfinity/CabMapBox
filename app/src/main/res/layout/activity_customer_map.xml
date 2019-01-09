@@ -19,7 +19,25 @@
         mapbox:mapbox_cameraTargetLat="25.625961"
         mapbox:mapbox_cameraTargetLng="85.106265"
         mapbox:mapbox_cameraZoom="12"
-        mapbox:mapbox_styleUrl="mapbox://styles/mapbox/streets-v11" />
+        mapbox:mapbox_styleUrl="mapbox://styles/mapbox/streets-v11" >
+
+    </com.mapbox.mapboxsdk.maps.MapView>
+
+    <Button
+        android:id="@+id/startCus"
+        android:layout_width="96dp"
+        android:layout_height="38dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="@string/start"
+        mapbox:layout_constraintBottom_toBottomOf="parent"
+        mapbox:layout_constraintEnd_toEndOf="parent"
+        mapbox:layout_constraintHorizontal_bias="0.643"
+        mapbox:layout_constraintStart_toEndOf="@+id/logout"
+        mapbox:layout_constraintTop_toTopOf="parent"
+        mapbox:layout_constraintVertical_bias="1.0" />
 
     <Button
         android:id="@+id/logout"
@@ -40,20 +58,22 @@
         mapbox:layout_constraintHorizontal_bias="0.837"
         mapbox:layout_constraintStart_toStartOf="parent"
         mapbox:layout_constraintTop_toBottomOf="@+id/mapViewCustomer"
-        mapbox:layout_constraintVertical_bias="0.843" />
+        mapbox:layout_constraintVertical_bias="1.0" />
 
     <Button
         android:id="@+id/request"
-        android:layout_width="160dp"
-        android:layout_height="40dp"
-        android:layout_marginStart="64dp"
-        android:layout_marginEnd="8dp"
-        android:text="@string/start_navigation"
-        mapbox:layout_constraintBottom_toBottomOf="@+id/logout"
+        android:layout_width="339dp"
+        android:layout_height="45dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="10dp"
+        android:enabled="false"
+        android:text="@string/customer_start_navigation"
+        mapbox:layout_constraintBottom_toBottomOf="parent"
         mapbox:layout_constraintEnd_toEndOf="parent"
-        mapbox:layout_constraintHorizontal_bias="0.0"
-        mapbox:layout_constraintStart_toEndOf="@+id/logout"
-        mapbox:layout_constraintTop_toTopOf="@+id/logout"
-        mapbox:layout_constraintVertical_bias="0.0" />
+        mapbox:layout_constraintHorizontal_bias="0.724"
+        mapbox:layout_constraintStart_toStartOf="parent"
+        mapbox:layout_constraintTop_toTopOf="parent"
+        mapbox:layout_constraintVertical_bias="0.015" />
 
 </android.support.constraint.ConstraintLayout>
