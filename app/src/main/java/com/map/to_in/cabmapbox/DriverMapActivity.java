@@ -1,15 +1,12 @@
 package com.map.to_in.cabmapbox;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -56,12 +53,12 @@ import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
-import retrofit2.Response;
+
 
 public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCallback, LocationEngineListener,
         PermissionsListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         com.google.android.gms.location.LocationListener {
-// NavigationListener
+    // NavigationListener
     private Button logout, startNavigation;
     private MapView mapView;
     private MapboxMap map;
@@ -96,13 +93,13 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
                 return;
             }
         });
-//        startNavigation = findViewById(R.id.startnav);
-//        startNavigation.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                getAssignedCustomer();
-//            }
-//        });
+        startNavigation = findViewById(R.id.startnav);
+        startNavigation.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getAssignedCustomer();
+            }
+        });
 //        buildGoogleApiClient();
     }
 
@@ -110,17 +107,28 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     public void onMapReady(MapboxMap mapboxMap) {
         map = mapboxMap;
         enableLocation();
-        buildGoogleApiClient();
+//        buildGoogleApiClient();
+
+//        map.setMyLocationEnabled(true);
+
+        //-----------------
+//        locationEngine = new LostLocationEngine(DriverMapActivity.this);
+//        locationEngine.setPriority(LocationEnginePriority.HIGH_ACCURACY);
+//        locationEngine.setInterval(5000);
+//        locationEngine.activate();
+//        @SuppressLint("MissingPermission")
+//        Location lastLocation = locationEngine.getLastLocation();
+        //-----------------
     }
 
-    protected synchronized void buildGoogleApiClient() {
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
-                .build();
-        mGoogleApiClient.connect();
-    }
+//    protected synchronized void buildGoogleApiClient() {
+//        mGoogleApiClient = new GoogleApiClient.Builder(this)
+//                .addConnectionCallbacks(this)
+//                .addOnConnectionFailedListener(this)
+//                .addApi(LocationServices.API)
+//                .build();
+//        mGoogleApiClient.connect();
+//    }
 
 
     private void enableLocation() {
@@ -137,8 +145,12 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     private void initializeLocationEngine() {
         locationEngine = new LocationEngineProvider(this).obtainBestLocationEngineAvailable();
 //        locationEngine = new GoogleLocationEngine(DriverMapActivity.this);
-        locationEngine.setPriority(LocationEnginePriority.HIGH_ACCURACY);
+        locationEngine.setPriority(LocationEnginePriority.BALANCED_POWER_ACCURACY);
+        locationEngine.setInterval(1000);
+        locationEngine.setFastestInterval(500);
+        locationEngine.addLocationEngineListener(this);
         locationEngine.activate();
+        locationEngine.requestLocationUpdates();
 
         Location lastLocation = locationEngine.getLastLocation();
         if (lastLocation != null) {
@@ -151,10 +163,19 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
 
     @SuppressLint("WrongConstant")
     private void initializeLocationLayer() {
-        locationLayerPlugin = new LocationLayerPlugin(mapView, map, locationEngine);
-        locationLayerPlugin.setLocationLayerEnabled(true);
-        locationLayerPlugin.setCameraMode(CameraMode.TRACKING);
-        locationLayerPlugin.setRenderMode(RenderMode.NORMAL);
+        if (PermissionsManager.areLocationPermissionsGranted(this)) {
+            initializeLocationEngine();
+            LocationLayerOptions options = LocationLayerOptions.builder(this)
+                    .build();
+            locationLayerPlugin = new LocationLayerPlugin(mapView, map, locationEngine, options);
+            locationLayerPlugin.setLocationLayerEnabled(true);
+            locationLayerPlugin.setCameraMode(CameraMode.TRACKING);
+            locationLayerPlugin.setRenderMode(RenderMode.NORMAL);
+            locationEngine.addLocationEngineListener(this);
+        }else{
+            permissionsManager = new PermissionsManager(this);
+            permissionsManager.requestLocationPermissions(this);
+        }
     }
 
     private void setCameraPosition(Location location) {
@@ -200,88 +221,88 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
             }
         }
     }
-//    private void getAssignedCustomer(){
-//        String driverId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-//        DatabaseReference assignedCustomerRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Driver").child(driverId);
-//        assignedCustomerRef.addValueEventListener(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(DataSnapshot dataSnapshot) {
-//                if (dataSnapshot.exists()) {
-//                    Toast.makeText(getApplicationContext(),"Customer Found.", Toast.LENGTH_LONG).show();
-////                    customerID = dataSnapshot.getValue().toString();
-////                    getAssignedCustomerPickupLocation();
-//
-//                    Map<String, String> dataMap = (Map<String, String>) dataSnapshot.getValue();
-//                    double locationLat = 25.625818;
-//                    double locationLng = 85.106596;
-//
-//                    if (dataMap.get("destinationLat") != null && dataMap.get("destinationLng") != null) {
-//                        String customerID = dataMap.get("CustomerRideID").toString();
-//                        locationLat = Double.parseDouble(dataMap.get("destinationLat").toString());
-//                        locationLng = Double.parseDouble(dataMap.get("destinationLng").toString());
-//                        Toast.makeText(getApplicationContext(),"Destination to Customer Found, Directing you there.", Toast.LENGTH_LONG).show();
-//                        shareDriverLocation(customerID);
-//                    }else{
-//                        Toast.makeText(getApplicationContext(),"Destination to Customer Not Found.", Toast.LENGTH_LONG).show();
-//                    }
-//                    LatLng pickUpLocation = new LatLng(locationLat, locationLng);
-//                    map.addMarker(new MarkerOptions().position(pickUpLocation).title("Pickup Location"));
-//                    getRoute(Point.fromLngLat(myLocation.getLongitude(), myLocation.getLatitude()),
-//                            Point.fromLngLat(pickUpLocation.getLongitude(), pickUpLocation.getLatitude()));
-//                }else{
-//                    Toast.makeText(getApplicationContext(),"Customer Not Found.", Toast.LENGTH_LONG).show();
-//                }
-//            }
-//
-//            @Override
-//            public void onCancelled(DatabaseError databaseError) {
-//                Toast.makeText(getApplicationContext(),"Database Error.", Toast.LENGTH_LONG).show();
-//
-//            }
-//        });
-//    }
+    private void getAssignedCustomer(){
+        String driverId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference assignedCustomerRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Driver").child(driverId);
+        assignedCustomerRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    Toast.makeText(getApplicationContext(),"Customer Found.", Toast.LENGTH_LONG).show();
+//                    customerID = dataSnapshot.getValue().toString();
+//                    getAssignedCustomerPickupLocation();
 
-//    private void shareDriverLocation(String customerID){
-//        DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Customer").child(customerID);
-//        String driverID = FirebaseAuth.getInstance().getCurrentUser().getUid();
-//        HashMap dataMap = new HashMap();
-//        dataMap.put("driverRideID", driverID);
-//        dataMap.put("destinationLat", myLocation.getLatitude());
-//        dataMap.put("destinationLng", myLocation.getLongitude());
-//        driverRef.updateChildren(dataMap);
-//    }
+                    Map<String, String> dataMap = (Map<String, String>) dataSnapshot.getValue();
+                    double locationLat = 25.625818;
+                    double locationLng = 85.106596;
 
-//    private void getRoute(Point origin, Point destination){
-//        NavigationRoute.builder(this)
-//                .accessToken(Mapbox.getAccessToken())
-//                .origin(origin)
-//                .destination(destination)
-//                .build()
-//                .getRoute(new Callback<DirectionsResponse>() {
-//                    @Override
-//                    public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
-//                        if(response.body() == null) {
-//                            Log.e(TAG, "No Routes found, check right user and access token");
-//                            return;
-//                        }else if(response.body().routes().size() == 0){
-//                            Log.e(TAG, "No Routes Found");
-//                            return;
-//                        }
-//                        currentRoute = response.body().routes().get(0);
-//                        if(navigationMapRoute != null){
-//                            navigationMapRoute.removeRoute();
-//                        }else {
-//                            navigationMapRoute = new NavigationMapRoute(null, mapView, map);
-//                        }
-//                        navigationMapRoute.addRoute(currentRoute);
-//                    }
-//
-//                    @Override
-//                    public void onFailure(Call<DirectionsResponse> call, Throwable t) {
-//                        Log.e(TAG, "Error:" + t.getMessage());
-//                    }
-//                });
-//    }
+                    if (dataMap.get("destinationLat") != null && dataMap.get("destinationLng") != null) {
+                        String customerID = dataMap.get("CustomerRideID").toString();
+                        locationLat = Double.parseDouble(dataMap.get("destinationLat").toString());
+                        locationLng = Double.parseDouble(dataMap.get("destinationLng").toString());
+                        Toast.makeText(getApplicationContext(),"Destination to Customer Found, Directing you there.", Toast.LENGTH_LONG).show();
+                        shareDriverLocation(customerID);
+                    }else{
+                        Toast.makeText(getApplicationContext(),"Destination to Customer Not Found.", Toast.LENGTH_LONG).show();
+                    }
+                    LatLng pickUpLocation = new LatLng(locationLat, locationLng);
+                    map.addMarker(new MarkerOptions().position(pickUpLocation).title("Pickup Location"));
+                    getRoute(Point.fromLngLat(myLocation.getLongitude(), myLocation.getLatitude()),
+                            Point.fromLngLat(pickUpLocation.getLongitude(), pickUpLocation.getLatitude()));
+                }else{
+                    Toast.makeText(getApplicationContext(),"Customer Not Found.", Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Toast.makeText(getApplicationContext(),"Database Error.", Toast.LENGTH_LONG).show();
+
+            }
+        });
+    }
+
+    private void shareDriverLocation(String customerID){
+        DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Customer").child(customerID);
+        String driverID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        HashMap dataMap = new HashMap();
+        dataMap.put("driverRideID", driverID);
+        dataMap.put("destinationLat", myLocation.getLatitude());
+        dataMap.put("destinationLng", myLocation.getLongitude());
+        driverRef.updateChildren(dataMap);
+    }
+
+    private void getRoute(Point origin, Point destination){
+        NavigationRoute.builder(this)
+                .accessToken(Mapbox.getAccessToken())
+                .origin(origin)
+                .destination(destination)
+                .build()
+                .getRoute(new Callback<DirectionsResponse>() {
+                    @Override
+                    public void onResponse(Call<DirectionsResponse> call, retrofit2.Response<DirectionsResponse> response) {
+                        if(response.body() == null) {
+                            Log.e(TAG, "No Routes found, chek right user and access token");
+                            return;
+                        }else if(response.body().routes().size() == 0){
+                            Log.e(TAG, "No Routes Found");
+                            return;
+                        }
+                        currentRoute = response.body().routes().get(0);
+                        if(navigationMapRoute != null){
+                            navigationMapRoute.removeRoute();
+                        }else {
+                            navigationMapRoute = new NavigationMapRoute(null, mapView, map);
+                        }
+                        navigationMapRoute.addRoute(currentRoute);
+                    }
+
+                    @Override
+                    public void onFailure(Call<DirectionsResponse> call, Throwable t) {
+                        Log.e(TAG, "Error:" + t.getMessage());
+                    }
+                });
+    }
 
     @Override // When User Denies the Permissions
     public void onExplanationNeeded(List<String> permissionsToExplain) {
@@ -381,14 +402,4 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
     }
-
-
-//    protected synchronized void buildGoogleApiClient(){
-//        map = new MapboxMap.Builder(this)
-//                .addConnectionCallbacks(this)
-//                .addOnConnectionFailedListener(this)
-//                .addApi(LocationServices.API)
-//                .build();
-//         map.connect();
-//    }
 }

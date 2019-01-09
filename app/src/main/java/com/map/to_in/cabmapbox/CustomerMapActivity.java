@@ -237,9 +237,9 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     @Override
     public void onConnected() {
         locationEngine.requestLocationUpdates();
-            locationEngine.setInterval(1000);
-            locationEngine.setFastestInterval(1000);
-            locationEngine.setPriority(LocationEnginePriority.HIGH_ACCURACY); //high Accuracy decrease if needed
+        locationEngine.setInterval(1000);
+        locationEngine.setFastestInterval(1000);
+        locationEngine.setPriority(LocationEnginePriority.HIGH_ACCURACY); //high Accuracy decrease if needed
     }
 
     @Override
