@@ -118,7 +118,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
 
                     DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Driver").child(driverFoundID);
                     String customerID = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                    HashMap dataMap = new HashMap<String, String>();
+                    HashMap<String, Object> dataMap = new HashMap<String, Object>();
                     dataMap.put("CustomerRideID", customerID);
                     dataMap.put("destinationLat", destinationLatLng.getLatitude());
                     dataMap.put("destinationLng", destinationLatLng.getLongitude());

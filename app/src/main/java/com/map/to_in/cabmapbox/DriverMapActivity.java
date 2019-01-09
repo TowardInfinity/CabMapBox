@@ -98,6 +98,14 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
             @Override
             public void onClick(View v) {
                 getAssignedCustomer();
+                if(currentRoute != null) {
+                    Toast.makeText(getApplicationContext(), "Direction Found, Starting Navigation", Toast.LENGTH_LONG).show();
+//                    NavigationLauncherOptions options = NavigationLauncherOptions.builder()
+//                            .directionsRoute(currentRoute)
+//                            .shouldSimulateRoute(true)
+//                            .build();
+//                    NavigationLauncher.startNavigation(DriverMapActivity.this, options);
+                }
             }
         });
 //        buildGoogleApiClient();
@@ -232,7 +240,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
 //                    customerID = dataSnapshot.getValue().toString();
 //                    getAssignedCustomerPickupLocation();
 
-                    Map<String, String> dataMap = (Map<String, String>) dataSnapshot.getValue();
+                    Map<String, Object> dataMap = (Map<String, Object>) dataSnapshot.getValue();
                     double locationLat = 25.625818;
                     double locationLng = 85.106596;
 
@@ -265,7 +273,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     private void shareDriverLocation(String customerID){
         DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Customer").child(customerID);
         String driverID = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        HashMap dataMap = new HashMap();
+        HashMap<String, Object> dataMap = new HashMap<String, Object>();
         dataMap.put("driverRideID", driverID);
         dataMap.put("destinationLat", myLocation.getLatitude());
         dataMap.put("destinationLng", myLocation.getLongitude());
