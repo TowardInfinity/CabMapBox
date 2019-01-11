@@ -1,9 +1,9 @@
 package com.map.to_in.cabmapbox;
 
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -16,8 +16,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-
-import java.util.HashMap;
 
 public class CustomerLoginActivity extends AppCompatActivity {
 
@@ -66,7 +64,7 @@ public class CustomerLoginActivity extends AppCompatActivity {
                         }else{
                             String user_id = firebaseAuth.getCurrentUser().getUid();
                             DatabaseReference current_user_db = FirebaseDatabase.getInstance()
-                                    .getReference().child("User").child("Customer").child(user_id);
+                                    .getReference().child("Users").child("Customer").child(user_id);
                             current_user_db.setValue(true);
                             Toast.makeText(CustomerLoginActivity.this, "User Id Created.", Toast.LENGTH_SHORT).show();
 

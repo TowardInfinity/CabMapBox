@@ -16,18 +16,16 @@ import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.mapbox.android.core.location.LocationEngine;
-import com.mapbox.android.core.location.LocationEngineListener;
-import com.mapbox.android.core.location.LocationEnginePriority;
-import com.mapbox.android.core.location.LocationEngineProvider;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.api.directions.v5.models.DirectionsResponse;
@@ -37,13 +35,13 @@ import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.location.LocationComponent;
 import com.mapbox.mapboxsdk.location.modes.CameraMode;
-import com.mapbox.mapboxsdk.location.modes.RenderMode;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
-import com.mapbox.mapboxsdk.plugins.locationlayer.LocationLayerOptions;
-import com.mapbox.mapboxsdk.plugins.locationlayer.LocationLayerPlugin;
+import com.mapbox.services.android.navigation.ui.v5.NavigationLauncher;
+import com.mapbox.services.android.navigation.ui.v5.NavigationLauncherOptions;
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute;
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute;
 
@@ -55,23 +53,21 @@ import retrofit2.Call;
 import retrofit2.Callback;
 
 
-public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCallback, LocationEngineListener,
-        PermissionsListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
-        com.google.android.gms.location.LocationListener {
-    // NavigationListener
-    private Button logout, startNavigation;
+public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCallback, PermissionsListener,
+        GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener, GoogleApiClient.ConnectionCallbacks {
+    private Button logout, startNavigation, startBtn;
     private MapView mapView;
-    private MapboxMap map;
+    private MapboxMap mapboxMap;
     private PermissionsManager permissionsManager;
-    private LocationEngine locationEngine;
-    private LocationLayerPlugin locationLayerPlugin;
     private NavigationMapRoute navigationMapRoute;
     private Location myLocation;
     private DirectionsRoute currentRoute;
     private String customerID = "";
     private static final String TAG = "DriverMapActivity";
+    private FusedLocationProviderClient mFusedLocationClient;
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
+    private String driverId = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,11 +77,19 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
         mapView = (MapView) findViewById(R.id.mapViewDriver);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+    }
 
+    @Override
+    public void onMapReady(MapboxMap mapboxMap) {
+        this.mapboxMap = mapboxMap;
+        enableLocation();
+        buildGoogleApiClient();
         logout = findViewById(R.id.logout);
         logout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                clearDatabase();
                 FirebaseAuth.getInstance().signOut();
                 Intent intent = new Intent(DriverMapActivity.this, MainActivity.class);
                 startActivity(intent);
@@ -97,147 +101,65 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
         startNavigation.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                getAssignedCustomer();
-                if(currentRoute != null) {
-                    Toast.makeText(getApplicationContext(), "Direction Found, Starting Navigation", Toast.LENGTH_LONG).show();
-//                    NavigationLauncherOptions options = NavigationLauncherOptions.builder()
-//                            .directionsRoute(currentRoute)
-//                            .shouldSimulateRoute(true)
-//                            .build();
-//                    NavigationLauncher.startNavigation(DriverMapActivity.this, options);
-                }
+                NavigationLauncherOptions options = NavigationLauncherOptions.builder()
+                        .directionsRoute(currentRoute)
+                        .shouldSimulateRoute(true)
+                        .build();
+                NavigationLauncher.startNavigation(DriverMapActivity.this, options);
             }
         });
-//        buildGoogleApiClient();
+        startBtn = findViewById(R.id.startDrv);
+        startBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getAssignedCustomer();
+            }
+        });
     }
 
-    @Override
-    public void onMapReady(MapboxMap mapboxMap) {
-        map = mapboxMap;
-        enableLocation();
-//        buildGoogleApiClient();
+    private void clearDatabase(){
+        Map<String, Object> upd = new HashMap();
+        DatabaseReference ref;
+        ref = FirebaseDatabase.getInstance().getReference().child("Users").child("Customer").child(customerID);
+        ref.setValue(upd);
 
-//        map.setMyLocationEnabled(true);
+        ref = FirebaseDatabase.getInstance().getReference().child("Users").child("Driver").child(driverId);
+        ref.setValue(upd);
 
-        //-----------------
-//        locationEngine = new LostLocationEngine(DriverMapActivity.this);
-//        locationEngine.setPriority(LocationEnginePriority.HIGH_ACCURACY);
-//        locationEngine.setInterval(5000);
-//        locationEngine.activate();
-//        @SuppressLint("MissingPermission")
-//        Location lastLocation = locationEngine.getLastLocation();
-        //-----------------
+        ref = FirebaseDatabase.getInstance().getReference("DriverAvailable");
+        GeoFire geoFire = new GeoFire(ref);
+        geoFire.removeLocation(driverId);
+
+        ref = FirebaseDatabase.getInstance().getReference("CustomerRequest");
+        geoFire = new GeoFire(ref);
+        geoFire.removeLocation(customerID);
+        customerID="";
     }
 
-//    protected synchronized void buildGoogleApiClient() {
-//        mGoogleApiClient = new GoogleApiClient.Builder(this)
-//                .addConnectionCallbacks(this)
-//                .addOnConnectionFailedListener(this)
-//                .addApi(LocationServices.API)
-//                .build();
-//        mGoogleApiClient.connect();
-//    }
 
-
+    @SuppressLint("MissingPermission")
     private void enableLocation() {
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
-            initializeLocationEngine();
-            initializeLocationLayer();
+            LocationComponent locationComponent = mapboxMap.getLocationComponent();
+            locationComponent.activateLocationComponent(this);
+            locationComponent.setLocationComponentEnabled(true);
+            locationComponent.setCameraMode(CameraMode.TRACKING);
+            myLocation = locationComponent.getLastKnownLocation();
         } else {
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this);
         }
     }
 
-    @SuppressLint("MissingPermission")
-    private void initializeLocationEngine() {
-        locationEngine = new LocationEngineProvider(this).obtainBestLocationEngineAvailable();
-//        locationEngine = new GoogleLocationEngine(DriverMapActivity.this);
-        locationEngine.setPriority(LocationEnginePriority.BALANCED_POWER_ACCURACY);
-        locationEngine.setInterval(1000);
-        locationEngine.setFastestInterval(500);
-        locationEngine.addLocationEngineListener(this);
-        locationEngine.activate();
-        locationEngine.requestLocationUpdates();
-
-        Location lastLocation = locationEngine.getLastLocation();
-        if (lastLocation != null) {
-            myLocation = lastLocation;
-            setCameraPosition(myLocation);
-        } else {
-            locationEngine.addLocationEngineListener(this);
-        }
-    }
-
-    @SuppressLint("WrongConstant")
-    private void initializeLocationLayer() {
-        if (PermissionsManager.areLocationPermissionsGranted(this)) {
-            initializeLocationEngine();
-            LocationLayerOptions options = LocationLayerOptions.builder(this)
-                    .build();
-            locationLayerPlugin = new LocationLayerPlugin(mapView, map, locationEngine, options);
-            locationLayerPlugin.setLocationLayerEnabled(true);
-            locationLayerPlugin.setCameraMode(CameraMode.TRACKING);
-            locationLayerPlugin.setRenderMode(RenderMode.NORMAL);
-            locationEngine.addLocationEngineListener(this);
-        }else{
-            permissionsManager = new PermissionsManager(this);
-            permissionsManager.requestLocationPermissions(this);
-        }
-    }
-
-    private void setCameraPosition(Location location) {
-        map.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(),
-                location.getLongitude()), 13.0));
-    }
-
-    @SuppressLint("MissingPermission")
-    @Override
-    public void onConnected() {
-        locationEngine.requestLocationUpdates();
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        if (location != null) {
-            myLocation = location;
-            setCameraPosition(location);
-        }
-        if (getApplicationContext() != null) {
-
-//            myLocation = location;
-//            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-//            map.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-//            map.animateCamera(CameraUpdateFactory.zoomTo(14));
-//            setCameraPosition(location);
-
-            String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-            DatabaseReference refAvailable = FirebaseDatabase.getInstance().getReference("DriverAvailable");
-            DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("DriverWorking");
-            GeoFire geoFireAvailable = new GeoFire(refAvailable);
-            GeoFire geoFireWorking = new GeoFire(refWorking);
-
-            switch (customerID) {
-                case "":
-                    geoFireWorking.removeLocation(userId);
-                    geoFireAvailable.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
-                    break;
-                default:
-                    geoFireAvailable.removeLocation(userId);
-                    geoFireWorking.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
-                    break;
-            }
-        }
-    }
     private void getAssignedCustomer(){
-        String driverId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        DatabaseReference assignedCustomerRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Driver").child(driverId);
+//        String driverId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference assignedCustomerRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Driver").child(driverId).child("Request").getRef();
         assignedCustomerRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
                     Toast.makeText(getApplicationContext(),"Customer Found.", Toast.LENGTH_LONG).show();
-//                    customerID = dataSnapshot.getValue().toString();
+//                    customerID = dataSnapshot.getKey();
 //                    getAssignedCustomerPickupLocation();
 
                     Map<String, Object> dataMap = (Map<String, Object>) dataSnapshot.getValue();
@@ -254,9 +176,12 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
                         Toast.makeText(getApplicationContext(),"Destination to Customer Not Found.", Toast.LENGTH_LONG).show();
                     }
                     LatLng pickUpLocation = new LatLng(locationLat, locationLng);
-                    map.addMarker(new MarkerOptions().position(pickUpLocation).title("Pickup Location"));
+                    mapboxMap.addMarker(new MarkerOptions().position(pickUpLocation).title("Pickup Location"));
                     getRoute(Point.fromLngLat(myLocation.getLongitude(), myLocation.getLatitude()),
                             Point.fromLngLat(pickUpLocation.getLongitude(), pickUpLocation.getLatitude()));
+                    Toast.makeText(getApplicationContext(), "Direction Found, Starting Navigation", Toast.LENGTH_LONG).show();
+                    startNavigation.setEnabled(true);
+                    startBtn.setText(R.string.start_navigation);
                 }else{
                     Toast.makeText(getApplicationContext(),"Customer Not Found.", Toast.LENGTH_LONG).show();
                 }
@@ -265,13 +190,12 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
             @Override
             public void onCancelled(DatabaseError databaseError) {
                 Toast.makeText(getApplicationContext(),"Database Error.", Toast.LENGTH_LONG).show();
-
             }
         });
     }
 
-    private void shareDriverLocation(String customerID){
-        DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Customer").child(customerID);
+    private void shareDriverLocation(String ID){
+        DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Customer").child(ID).child("Request");
         String driverID = FirebaseAuth.getInstance().getCurrentUser().getUid();
         HashMap<String, Object> dataMap = new HashMap<String, Object>();
         dataMap.put("driverRideID", driverID);
@@ -282,45 +206,48 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
 
     private void getRoute(Point origin, Point destination){
         NavigationRoute.builder(this)
-                .accessToken(Mapbox.getAccessToken())
-                .origin(origin)
-                .destination(destination)
-                .build()
-                .getRoute(new Callback<DirectionsResponse>() {
-                    @Override
-                    public void onResponse(Call<DirectionsResponse> call, retrofit2.Response<DirectionsResponse> response) {
-                        if(response.body() == null) {
-                            Log.e(TAG, "No Routes found, chek right user and access token");
-                            return;
-                        }else if(response.body().routes().size() == 0){
-                            Log.e(TAG, "No Routes Found");
-                            return;
-                        }
-                        currentRoute = response.body().routes().get(0);
-                        if(navigationMapRoute != null){
-                            navigationMapRoute.removeRoute();
-                        }else {
-                            navigationMapRoute = new NavigationMapRoute(null, mapView, map);
-                        }
-                        navigationMapRoute.addRoute(currentRoute);
+            .accessToken(Mapbox.getAccessToken())
+            .origin(origin)
+            .destination(destination)
+            .build()
+            .getRoute(new Callback<DirectionsResponse>() {
+                @Override
+                public void onResponse(Call<DirectionsResponse> call, retrofit2.Response<DirectionsResponse> response) {
+                    if(response.body() == null) {
+                        Log.e(TAG, "No Routes found, chek right user and access token");
+                        return;
+                    }else if(response.body().routes().size() == 0){
+                        Log.e(TAG, "No Routes Found");
+                        return;
                     }
+                    currentRoute = response.body().routes().get(0);
+                    if(navigationMapRoute != null){
+                        navigationMapRoute.removeRoute();
+                    }else {
+                        navigationMapRoute = new NavigationMapRoute(null, mapView, mapboxMap);
+                    }
+                    navigationMapRoute.addRoute(currentRoute);
+                }
 
-                    @Override
-                    public void onFailure(Call<DirectionsResponse> call, Throwable t) {
-                        Log.e(TAG, "Error:" + t.getMessage());
-                    }
-                });
+                @Override
+                public void onFailure(Call<DirectionsResponse> call, Throwable t) {
+                    Log.e(TAG, "Error:" + t.getMessage());
+                }
+            });
     }
 
     @Override // When User Denies the Permissions
     public void onExplanationNeeded(List<String> permissionsToExplain) {
-        Toast.makeText(getApplicationContext(), "Without these permissions, you Wont be able to use location Services.", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, R.string.user_location_permission_explanation, Toast.LENGTH_LONG).show();
     }
 
     @Override
     public void onPermissionResult(boolean granted) {
         if (granted) {
             enableLocation();
+        } else {
+            Toast.makeText(this, R.string.user_location_permission_not_granted, Toast.LENGTH_LONG).show();
+            finish();
         }
     }
 
@@ -329,15 +256,82 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
         permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
+    @SuppressLint("MissingPermission")
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(1000);
+        mLocationRequest.setFastestInterval(1000);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+
+    @SuppressLint("MissingPermission")
+    @Override
+    public void onLocationChanged(Location location) {
+        mFusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        // Got last known location. In some rare situations this can be null.
+                        if (location != null) {
+                            // Logic to handle location object
+                            myLocation = location;
+                            setCameraPosition(location);
+
+                            String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                            DatabaseReference refAvailable = FirebaseDatabase.getInstance().getReference("DriverAvailable");
+                            DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("DriverWorking");
+                            GeoFire geoFireAvailable = new GeoFire(refAvailable);
+                            GeoFire geoFireWorking = new GeoFire(refWorking);
+
+                            switch (customerID) {
+                                case "":
+                                    geoFireWorking.removeLocation(userId);
+                                    geoFireAvailable.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
+                                    break;
+                                default:
+                                    geoFireAvailable.removeLocation(userId);
+                                    geoFireWorking.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
+                                    break;
+                            }
+                            driverId = userId;
+                        }
+                        else{
+                            Toast.makeText(getApplicationContext(), "Location Not Found.", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+    }
+    private void setCameraPosition(Location location) {
+        mapboxMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(),
+                location.getLongitude()), 13.0));
+    }
+
+    protected synchronized void buildGoogleApiClient(){
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+        mGoogleApiClient.connect();
+    }
+
     @Override
     public void onStart() {
         super.onStart();
-        if (locationEngine != null) {
-            locationEngine.removeLocationUpdates();
-        }
-        if (locationLayerPlugin != null) {
-            locationLayerPlugin.onStart();
-        }
         mapView.onStart();
     }
 
@@ -356,16 +350,8 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     @Override
     public void onStop() {
         super.onStop();
-        if (locationEngine != null) {
-            locationEngine.removeLocationUpdates();
-        }
-        if (locationLayerPlugin != null) {
-            locationLayerPlugin.onStop();
-        }
         mapView.onStop();
     }
-
-    // On stopping a method should be implemented which would remove the driver from working stage to available.
 
     @Override
     public void onLowMemory() {
@@ -376,9 +362,6 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (locationEngine != null) {
-            locationEngine.deactivate();
-        }
         mapView.onDestroy();
     }
 
@@ -386,28 +369,5 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         mapView.onSaveInstanceState(outState);
-    }
-
-    @SuppressLint("MissingPermission")
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-        mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(1000);
-        mLocationRequest.setFastestInterval(1000);
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-        myLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-//        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
-//        locationEngine.requestLocationUpdates();
-
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
     }
 }
