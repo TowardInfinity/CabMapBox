@@ -55,6 +55,7 @@ import retrofit2.Callback;
 
 public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCallback, PermissionsListener,
         GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener, GoogleApiClient.ConnectionCallbacks {
+
     private Button logout, startNavigation, startBtn;
     private MapView mapView;
     private MapboxMap mapboxMap;

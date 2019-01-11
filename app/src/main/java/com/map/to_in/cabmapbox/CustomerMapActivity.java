@@ -30,7 +30,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
-import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
@@ -53,19 +52,16 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     private MapView mapView;
     private MapboxMap mapboxMap;
     private PermissionsManager permissionsManager;
-    private Location myLocation = new Location("DummyLocation");
-    private LatLng originCoord = new LatLng(0.0, 0.0);
-    private LatLng destinationCoord = new LatLng(0.0, 0.0);
+    private Location myLocation;
+    private LatLng originCoord;
+    private LatLng destinationCoord;
+    private static final String TAG = "CustomerMapActivity";
 
     private FusedLocationProviderClient mFusedLocationClient;
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
-
-    private Point originPosition;
-    private Point destinationPosition;
 //    private String customerID = "";
 
-    private static final String TAG = "CustomerMapActivity";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,9 +70,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
         mapView = (MapView) findViewById(R.id.mapViewCustomer);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
-        destinationCoord = new LatLng(0.0,0.0);
-        myLocation.setLatitude(0.0);
-        myLocation.setLongitude(0.0);
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
     }
 
     @Override
@@ -84,19 +78,12 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
         CustomerMapActivity.this.mapboxMap = mapboxMap;
         enableLocation();
         buildGoogleApiClient();
-        originCoord = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
         startbtn = findViewById(R.id.startCus);
         startbtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
-
-                DatabaseReference ref = FirebaseDatabase.getInstance().getReference("CustomerRequest");
-                GeoFire geoFire = new GeoFire(ref);
-                geoFire.setLocation(userID, new GeoLocation(myLocation.getLatitude(), myLocation.getLongitude()));
-
-                originCoord = new LatLng(originCoord.getLatitude(), originCoord.getLongitude());
-                CustomerMapActivity.this.mapboxMap.addMarker(new MarkerOptions().position(originCoord).title("Pickup Here"));
+//                originCoord = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
+                CustomerMapActivity.this.mapboxMap.addMarker(new MarkerOptions().position(new LatLng(myLocation.getLatitude(), myLocation.getLongitude())).title("Pickup Here"));
                 requestBtn.setText(getString(R.string.getting_your_driver));
 
                 getClosestDriver();
@@ -166,7 +153,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
 
         GeoFire geoFire = new GeoFire(driverLocation);
 
-        GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(originCoord.getLatitude(), originCoord.getLongitude()), radius);
+        GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(myLocation.getLatitude(), myLocation.getLongitude()), radius);
         geoQuery.removeAllListeners();  //Removes all data stored
 
         geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
@@ -181,8 +168,8 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
                     String customerID = FirebaseAuth.getInstance().getCurrentUser().getUid();
                     HashMap<String, Object> dataMap = new HashMap<String, Object>( );
                     dataMap.put("CustomerRideID", customerID);
-                    dataMap.put("destinationLat", destinationCoord.getLatitude());
-                    dataMap.put("destinationLng", destinationCoord.getLongitude());
+                    dataMap.put("destinationLat", myLocation.getLatitude());
+                    dataMap.put("destinationLng", myLocation.getLongitude());
                     driverRef.updateChildren(dataMap);
                     Toast.makeText(getApplicationContext(),"Driver Found, Wait.", Toast.LENGTH_LONG).show();
                     requestBtn.setText(getString(R.string.DriverSearch));
@@ -230,6 +217,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
                         String customerID = dataMap.get("DriverRideID").toString();
                         locationLat = Double.parseDouble(dataMap.get("destinationLat").toString());
                         locationLng = Double.parseDouble(dataMap.get("destinationLng").toString());
+                        destinationCoord = new LatLng(locationLat, locationLng);
                         Toast.makeText(getApplicationContext(), "Destination to Driver Found, Driver Approaching Here.", Toast.LENGTH_LONG).show();
                         requestBtn.setText(getString(R.string.driverFound));
                     } else {
@@ -252,8 +240,8 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(1000);
-        mLocationRequest.setFastestInterval(1000);
+//        mLocationRequest.setInterval(1000);
+//        mLocationRequest.setFastestInterval(1000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY); //high Accuracy decrease if needed
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
     }
@@ -278,6 +266,13 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
                         if (location != null) {
                             myLocation = location;
                             setCameraPosition(location);
+                            String userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+                            DatabaseReference ref = FirebaseDatabase.getInstance().getReference("CustomerRequest");
+                            GeoFire geoFire = new GeoFire(ref);
+                            geoFire.setLocation(userID, new GeoLocation(location.getLatitude(), location.getLongitude()));
+
+//                            originCoord = new LatLng(location.getLatitude(), location.getLongitude());
                         }
                     }
                 });
