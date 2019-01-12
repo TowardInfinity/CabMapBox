@@ -300,7 +300,8 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
                             }
                             driverId = userId;
                         } catch (Exception t){
-                            Toast.makeText(getApplicationContext(), "User Id Not Found", Toast.LENGTH_LONG).show();
+//                            Toast.makeText(getApplicationContext(), "User Id Not Found", Toast.LENGTH_LONG).show();
+                            finish();
                         }
 
                     }

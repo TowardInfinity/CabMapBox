@@ -273,11 +273,15 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
                         if (location != null) {
                             myLocation = location;
                             setCameraPosition(location);
-                            String userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                            try {
+                                String userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-                            DatabaseReference ref = FirebaseDatabase.getInstance().getReference("CustomerRequest");
-                            GeoFire geoFire = new GeoFire(ref);
-                            geoFire.setLocation(userID, new GeoLocation(location.getLatitude(), location.getLongitude()));
+                                DatabaseReference ref = FirebaseDatabase.getInstance().getReference("CustomerRequest");
+                                GeoFire geoFire = new GeoFire(ref);
+                                geoFire.setLocation(userID, new GeoLocation(location.getLatitude(), location.getLongitude()));
+                            }catch (Exception te){
+                                finish();
+                            }
 
 //                            originCoord = new LatLng(location.getLatitude(), location.getLongitude());
                         }
