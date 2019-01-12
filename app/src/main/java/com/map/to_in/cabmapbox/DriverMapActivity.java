@@ -119,21 +119,10 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     }
 
     private void clearDatabase(){
-        Map<String, Object> upd = new HashMap();
-        DatabaseReference ref;
-        ref = FirebaseDatabase.getInstance().getReference().child("Users").child("Customer").child(customerID);
-        ref.setValue(upd);
-
-        ref = FirebaseDatabase.getInstance().getReference().child("Users").child("Driver").child(driverId);
-        ref.setValue(upd);
-
-        ref = FirebaseDatabase.getInstance().getReference("DriverAvailable");
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("DriverAvailable");
         GeoFire geoFire = new GeoFire(ref);
         geoFire.removeLocation(driverId);
 
-        ref = FirebaseDatabase.getInstance().getReference("CustomerRequest");
-        geoFire = new GeoFire(ref);
-        geoFire.removeLocation(customerID);
         customerID="";
     }
 
@@ -283,16 +272,17 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     @Override
     public void onLocationChanged(Location location) {
         mFusedLocationClient.getLastLocation()
-                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(Location location) {
-                        // Got last known location. In some rare situations this can be null.
-                        if (location != null) {
-                            // Logic to handle location object
-                            myLocation = location;
-                            setCameraPosition(location);
-
-                            String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                @Override
+                public void onSuccess(Location location) {
+                    // Got last known location. In some rare situations this can be null.
+                    if (location != null) {
+                        // Logic to handle location object
+                        myLocation = location;
+                        setCameraPosition(location);
+                        String userId;
+                        try {
+                            userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
                             DatabaseReference refAvailable = FirebaseDatabase.getInstance().getReference("DriverAvailable");
                             DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("DriverWorking");
                             GeoFire geoFireAvailable = new GeoFire(refAvailable);
@@ -309,12 +299,16 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
                                     break;
                             }
                             driverId = userId;
+                        } catch (Exception t){
+                            Toast.makeText(getApplicationContext(), "User Id Not Found", Toast.LENGTH_LONG).show();
                         }
-                        else{
-                            Toast.makeText(getApplicationContext(), "Location Not Found.", Toast.LENGTH_LONG).show();
-                        }
+
                     }
-                });
+                    else{
+                        Toast.makeText(getApplicationContext(), "Location Not Found.", Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
     }
     private void setCameraPosition(Location location) {
         mapboxMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(),

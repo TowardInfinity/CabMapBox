@@ -60,7 +60,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     private FusedLocationProviderClient mFusedLocationClient;
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
-//    private String customerID = "";
+    private String customerID = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,6 +93,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
         logout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                clearDatabase();
                 FirebaseAuth.getInstance().signOut();
                 Intent intent = new Intent(CustomerMapActivity.this, MainActivity.class);
                 startActivity(intent);
@@ -108,6 +109,12 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
 
             }
         });
+    }
+
+    private void clearDatabase(){
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("CustomerRequest");
+        GeoFire geoFire = new GeoFire(ref);
+        geoFire.removeLocation(customerID);
     }
 
     @SuppressLint("MissingPermission")
@@ -165,7 +172,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
                     Log.d("Key : ", driverFoundID);
 
                     DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Driver").child(driverFoundID).child("Request");
-                    String customerID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    customerID = FirebaseAuth.getInstance().getCurrentUser().getUid();
                     HashMap<String, Object> dataMap = new HashMap<String, Object>( );
                     dataMap.put("CustomerRideID", customerID);
                     dataMap.put("destinationLat", myLocation.getLatitude());
@@ -240,8 +247,8 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         mLocationRequest = new LocationRequest();
-//        mLocationRequest.setInterval(1000);
-//        mLocationRequest.setFastestInterval(1000);
+        mLocationRequest.setInterval(1000);
+        mLocationRequest.setFastestInterval(1000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY); //high Accuracy decrease if needed
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
     }
