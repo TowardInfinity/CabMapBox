@@ -67,6 +67,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     private DirectionsRoute currentRoute;
     private String customerID = "";
     private static final String TAG = "DriverMapActivity";
+    
     private FusedLocationProviderClient mFusedLocationClient;
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
@@ -125,7 +126,6 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference("DriverAvailable");
         GeoFire geoFire = new GeoFire(ref);
         geoFire.removeLocation(driverId);
-
         customerID="";
     }
 
@@ -146,15 +146,14 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
 
     private void getAssignedCustomer(){
 //        String driverId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        DatabaseReference assignedCustomerRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Driver").child(driverId).child("Request").getRef();
+        DatabaseReference assignedCustomerRef = FirebaseDatabase.getInstance().getReference()
+                .child("Users").child("Driver").child(driverId).child("Request").getRef();
         assignedCustomerRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
                     Toast.makeText(getApplicationContext(),"Customer Found.", Toast.LENGTH_LONG).show();
 //                    customerID = dataSnapshot.getKey();
-//                    getAssignedCustomerPickupLocation();
-
                     Map<String, Object> dataMap = (Map<String, Object>) dataSnapshot.getValue();
                     double locationLat = 25.625818;
                     double locationLng = 85.106596;
@@ -169,7 +168,8 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
                         Toast.makeText(getApplicationContext(),"Destination to Customer Not Found.", Toast.LENGTH_LONG).show();
                     }
                     LatLng pickUpLocation = new LatLng(locationLat, locationLng);
-                    mapboxMap.addMarker(new MarkerOptions().position(pickUpLocation).title("Pickup Location").setIcon(IconFactory.getInstance(DriverMapActivity.this).fromResource(R.drawable.icons8_street_view_32)));
+                    mapboxMap.addMarker(new MarkerOptions().position(pickUpLocation).title("Pickup Location")
+                            .setIcon(IconFactory.getInstance(DriverMapActivity.this).fromResource(R.drawable.icons8_street_view_32)));
                     getRoute(Point.fromLngLat(myLocation.getLongitude(), myLocation.getLatitude()),
                             Point.fromLngLat(pickUpLocation.getLongitude(), pickUpLocation.getLatitude()));
                     Toast.makeText(getApplicationContext(), "Direction Found, Starting Navigation", Toast.LENGTH_LONG).show();
@@ -256,20 +256,14 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
         mLocationRequest.setInterval(1000);
         mLocationRequest.setFastestInterval(1000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
-
     }
 
     @Override
-    public void onConnectionSuspended(int i) {
-
-    }
+    public void onConnectionSuspended(int i) {    }
 
     @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
-    }
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {    }
 
     @SuppressLint("MissingPermission")
     @Override
@@ -306,6 +300,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
                         } catch (Exception t){
 //                            Toast.makeText(getApplicationContext(), "User Id Not Found", Toast.LENGTH_LONG).show();
                             finish();
+                            return;
                         }
 
                     }
@@ -351,7 +346,6 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     public void onStop() {
         super.onStop();
         mapView.onStop();
-        clearDatabase();
     }
 
     @Override

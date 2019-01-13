@@ -54,8 +54,6 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     private MapboxMap mapboxMap;
     private PermissionsManager permissionsManager;
     private Location myLocation;
-    private LatLng originCoord;
-    private LatLng destinationCoord;
     private static final String TAG = "CustomerMapActivity";
     private FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
@@ -90,7 +88,10 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
             @Override
             public void onClick(View v) {
 //                originCoord = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
-                CustomerMapActivity.this.mapboxMap.addMarker(new MarkerOptions().position(new LatLng(myLocation.getLatitude(), myLocation.getLongitude())).title("Pickup Here").setIcon(IconFactory.getInstance(CustomerMapActivity.this).fromResource(R.drawable.icons8_street_view_32)));
+                CustomerMapActivity.this.mapboxMap.addMarker(new MarkerOptions().
+                        position(new LatLng(myLocation.getLatitude(), myLocation.getLongitude()))
+                        .title("Pickup Here").setIcon(IconFactory.getInstance(CustomerMapActivity.this)
+                                .fromResource(R.drawable.icons8_street_view_32)));
                 requestBtn.setText(getString(R.string.getting_your_driver));
 
                 getClosestDriver();
@@ -172,7 +173,8 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
                     driverFoundID = key;
                     Log.d("Key : ", driverFoundID);
 
-                    DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Driver").child(driverFoundID).child("Request");
+                    DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference()
+                            .child("Users").child("Driver").child(driverFoundID).child("Request");
                     customerID = user.getUid();
                     HashMap<String, Object> dataMap = new HashMap<String, Object>( );
                     dataMap.put("CustomerRideID", customerID);
@@ -224,13 +226,16 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
                     if (marker != null) {
                         mapboxMap.removeMarker(marker);
                     }
-                    marker = mapboxMap.addMarker(new MarkerOptions().position(driverLatLng).title("Your Driver").setIcon(IconFactory.getInstance(CustomerMapActivity.this).fromResource(R.drawable.icons8_car_top_view_32)));
+                    marker = mapboxMap.addMarker(new MarkerOptions().position(driverLatLng)
+                            .title("Your Driver").setIcon(IconFactory.getInstance(CustomerMapActivity.this)
+                                    .fromResource(R.drawable.icons8_car_top_view_32)));
                 }
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-                Toast.makeText(getApplicationContext(),"There was an error getting the GeoFire location: " + databaseError, Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(),"There was an error getting the GeoFire location: "
+                        + databaseError, Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -276,7 +281,6 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
                         }catch (Exception te){
                             finish();
                         }
-//                            originCoord = new LatLng(location.getLatitude(), location.getLongitude());
                     }
                 }
             });
@@ -318,7 +322,6 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     protected void onStop() {
         super.onStop();
         mapView.onStop();
-        clearDatabase();
     }
 
     @Override
