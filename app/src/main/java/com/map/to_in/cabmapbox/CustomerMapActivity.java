@@ -16,6 +16,7 @@ import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.firebase.geofire.GeoQuery;
 import com.firebase.geofire.GeoQueryEventListener;
+import com.firebase.geofire.LocationCallback;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -23,14 +24,15 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
+import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
@@ -42,7 +44,6 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
 public class CustomerMapActivity extends AppCompatActivity implements OnMapReadyCallback, PermissionsListener,
@@ -56,11 +57,17 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     private LatLng originCoord;
     private LatLng destinationCoord;
     private static final String TAG = "CustomerMapActivity";
+    private FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
     private FusedLocationProviderClient mFusedLocationClient;
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
     private String customerID = "";
+
+    private Marker marker;
+    private int radius = 1;
+    private Boolean driverFound = false;
+    private String driverFoundID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,7 +90,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
             @Override
             public void onClick(View v) {
 //                originCoord = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
-                CustomerMapActivity.this.mapboxMap.addMarker(new MarkerOptions().position(new LatLng(myLocation.getLatitude(), myLocation.getLongitude())).title("Pickup Here"));
+                CustomerMapActivity.this.mapboxMap.addMarker(new MarkerOptions().position(new LatLng(myLocation.getLatitude(), myLocation.getLongitude())).title("Pickup Here").setIcon(IconFactory.getInstance(CustomerMapActivity.this).fromResource(R.drawable.icons8_street_view_32)));
                 requestBtn.setText(getString(R.string.getting_your_driver));
 
                 getClosestDriver();
@@ -150,14 +157,8 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
-
-    private int radius = 1;
-    private Boolean driverFound = false;
-    private String driverFoundID;
-
     private void getClosestDriver(){
         DatabaseReference driverLocation = FirebaseDatabase.getInstance().getReference().child("DriverAvailable");
-
         GeoFire geoFire = new GeoFire(driverLocation);
 
         GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(myLocation.getLatitude(), myLocation.getLongitude()), radius);
@@ -172,7 +173,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
                     Log.d("Key : ", driverFoundID);
 
                     DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Driver").child(driverFoundID).child("Request");
-                    customerID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    customerID = user.getUid();
                     HashMap<String, Object> dataMap = new HashMap<String, Object>( );
                     dataMap.put("CustomerRideID", customerID);
                     dataMap.put("destinationLat", myLocation.getLatitude());
@@ -210,35 +211,26 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     }
 
     private void getDriverLocation(){
-        requestBtn.setText(getString(R.string.DriverSearch));
-        DatabaseReference driverLocationRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Customer").child(driverFoundID).child("Request").getRef();
-        driverLocationRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()) {
-                    Map<String, Object> dataMap = (Map<String, Object>) dataSnapshot.getValue();
-                    double locationLat = 25.625818;
-                    double locationLng = 85.106596;
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("DriverAvailable");
+        GeoFire geoFire = new GeoFire(ref);
 
-                    if (dataMap.get("destinationLat") != null && dataMap.get("destinationLng") != null) {
-                        String customerID = dataMap.get("DriverRideID").toString();
-                        locationLat = Double.parseDouble(dataMap.get("destinationLat").toString());
-                        locationLng = Double.parseDouble(dataMap.get("destinationLng").toString());
-                        destinationCoord = new LatLng(locationLat, locationLng);
-                        Toast.makeText(getApplicationContext(), "Destination to Driver Found, Driver Approaching Here.", Toast.LENGTH_LONG).show();
-                        requestBtn.setText(getString(R.string.driverFound));
-                    } else {
-                        Toast.makeText(getApplicationContext(), "Destination to Driver Not Found.", Toast.LENGTH_LONG).show();
-                        requestBtn.setText(getString(R.string.noDirection));
+        geoFire.getLocation(driverFoundID, new LocationCallback() {
+            @Override
+            public void onLocationResult(String key, GeoLocation location) {
+                if (location != null) {
+                    double lat = location.latitude;
+                    double lng = location.longitude;
+                    LatLng driverLatLng = new LatLng(lat, lng);
+                    if (marker != null) {
+                        mapboxMap.removeMarker(marker);
                     }
-                    LatLng driverLatLng = new LatLng(locationLat, locationLng);
-                    mapboxMap.addMarker(new MarkerOptions().position(driverLatLng).title("Your Driver"));
+                    marker = mapboxMap.addMarker(new MarkerOptions().position(driverLatLng).title("Your Driver").setIcon(IconFactory.getInstance(CustomerMapActivity.this).fromResource(R.drawable.icons8_car_top_view_32)));
                 }
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-
+                Toast.makeText(getApplicationContext(),"There was an error getting the GeoFire location: " + databaseError, Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -266,27 +258,28 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     @SuppressLint("MissingPermission")
     @Override
     public void onLocationChanged(Location location) {
+        if(driverFoundID != null) {
+            getDriverLocation();
+        }
         mFusedLocationClient.getLastLocation()
-                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(Location location) {
-                        if (location != null) {
-                            myLocation = location;
-                            setCameraPosition(location);
-                            try {
-                                String userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
-
-                                DatabaseReference ref = FirebaseDatabase.getInstance().getReference("CustomerRequest");
-                                GeoFire geoFire = new GeoFire(ref);
-                                geoFire.setLocation(userID, new GeoLocation(location.getLatitude(), location.getLongitude()));
-                            }catch (Exception te){
-                                finish();
-                            }
-
-//                            originCoord = new LatLng(location.getLatitude(), location.getLongitude());
+            .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                @Override
+                public void onSuccess(Location location) {
+                    if (location != null) {
+                        myLocation = location;
+                        setCameraPosition(location);
+                        try {
+                            String userID = user.getUid();
+                            DatabaseReference ref = FirebaseDatabase.getInstance().getReference("CustomerRequest");
+                            GeoFire geoFire = new GeoFire(ref);
+                            geoFire.setLocation(userID, new GeoLocation(location.getLatitude(), location.getLongitude()));
+                        }catch (Exception te){
+                            finish();
                         }
+//                            originCoord = new LatLng(location.getLatitude(), location.getLongitude());
                     }
-                });
+                }
+            });
     }
 
     private void setCameraPosition(Location location) {
@@ -325,6 +318,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     protected void onStop() {
         super.onStop();
         mapView.onStop();
+        clearDatabase();
     }
 
     @Override

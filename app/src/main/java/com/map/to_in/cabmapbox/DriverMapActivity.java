@@ -21,6 +21,7 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -32,6 +33,7 @@ import com.mapbox.api.directions.v5.models.DirectionsResponse;
 import com.mapbox.api.directions.v5.models.DirectionsRoute;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
@@ -69,6 +71,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
     private String driverId = "";
+    private FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,7 +169,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
                         Toast.makeText(getApplicationContext(),"Destination to Customer Not Found.", Toast.LENGTH_LONG).show();
                     }
                     LatLng pickUpLocation = new LatLng(locationLat, locationLng);
-                    mapboxMap.addMarker(new MarkerOptions().position(pickUpLocation).title("Pickup Location"));
+                    mapboxMap.addMarker(new MarkerOptions().position(pickUpLocation).title("Pickup Location").setIcon(IconFactory.getInstance(DriverMapActivity.this).fromResource(R.drawable.icons8_street_view_32)));
                     getRoute(Point.fromLngLat(myLocation.getLongitude(), myLocation.getLatitude()),
                             Point.fromLngLat(pickUpLocation.getLongitude(), pickUpLocation.getLatitude()));
                     Toast.makeText(getApplicationContext(), "Direction Found, Starting Navigation", Toast.LENGTH_LONG).show();
@@ -186,7 +189,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
 
     private void shareDriverLocation(String ID){
         DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Customer").child(ID).child("Request");
-        String driverID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        String driverID = user.getUid();
         HashMap<String, Object> dataMap = new HashMap<String, Object>();
         dataMap.put("driverRideID", driverID);
         dataMap.put("destinationLat", myLocation.getLatitude());
@@ -271,6 +274,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     @SuppressLint("MissingPermission")
     @Override
     public void onLocationChanged(Location location) {
+//        shareDriverLocation(customerID);
         mFusedLocationClient.getLastLocation()
             .addOnSuccessListener(this, new OnSuccessListener<Location>() {
                 @Override
@@ -282,7 +286,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
                         setCameraPosition(location);
                         String userId;
                         try {
-                            userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                            userId = user.getUid();
                             DatabaseReference refAvailable = FirebaseDatabase.getInstance().getReference("DriverAvailable");
                             DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("DriverWorking");
                             GeoFire geoFireAvailable = new GeoFire(refAvailable);
@@ -347,6 +351,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     public void onStop() {
         super.onStop();
         mapView.onStop();
+        clearDatabase();
     }
 
     @Override
