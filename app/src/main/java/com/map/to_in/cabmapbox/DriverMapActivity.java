@@ -67,7 +67,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     private DirectionsRoute currentRoute;
     private String customerID = "";
     private static final String TAG = "DriverMapActivity";
-    
+
     private FusedLocationProviderClient mFusedLocationClient;
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
@@ -357,6 +357,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        mapView.onDestroy();
         mapView.onDestroy();
     }
 

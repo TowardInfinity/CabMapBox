@@ -333,6 +333,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        clearDatabase();
         mapView.onDestroy();
     }
 

@@ -1,13 +1,13 @@
 <resources>
-    <string name="app_name">Cab Services</string>
+    <string name="app_name">School Bus</string>
     <string name="access_token" translatable="false">pk.eyJ1IjoidG8taW4iLCJhIjoiY2pxcXg0ZnFnMDRyYjN6cXBiMmtuMmtsayJ9.cuXDeNrhOKd9thppArJIIg</string>
     <string name="email_id">Email ID</string>
     <string name="login">Login</string>
     <string name="registration">Registration</string>
     <string name="password">Password</string>
     <string name="customer_registration">Customer</string>
-    <string name="customer">Customer</string>
-    <string name="user_type">User Type</string>
+    <string name="customer">Student</string>
+    <string name="user_type">Bus Services</string>
     <string name="driver">Driver</string>
     <string name="driver_n">Driver</string>
     <string name="logout">LogOut</string>
@@ -23,4 +23,7 @@
     <string name="start_navigation">Start Navigation</string>
     <string name="user_location_permission_explanation">This app needs location permissions in order to show its functionality.</string>
     <string name="user_location_permission_not_granted">You didn\'t grant location permissions.</string>
+    <string name="students_approaching_bus">Students approaching Bus</string>
+    <string name="school_student">School Student</string>
+    <string name="school_bus_with_driver">School Bus with Driver</string>
 </resources>

@@ -1,21 +1,21 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
-    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.NoActionBar">
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="AppTheme.AppBarOverlay" parent="Theme.AppCompat.NoActionBar" />
+    <style name="AppTheme.AppBarOverlay" parent="Theme.AppCompat.Light.NoActionBar" />
 
-    <style name="AppTheme.PopupOverlay" parent="Theme.AppCompat.NoActionBar" />
+    <style name="AppTheme.PopupOverlay" parent="Theme.AppCompat.Light.NoActionBar" />
 
     <style name="NavigationMapRoute">
         <!-- Colors -->
@@ -27,7 +27,7 @@
         <item name="routeScale">1.0</item>
     </style>
 
-    <style name="NavigationView" parent="Theme.AppCompat.NoActionBar">
+    <style name="NavigationView" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="navigationViewPrimary">@color/mapboxWhite</item>
         <item name="navigationViewSecondary">@color/mapboxBlue</item>
         <item name="navigationViewAccent">@color/mapboxPink</item>
