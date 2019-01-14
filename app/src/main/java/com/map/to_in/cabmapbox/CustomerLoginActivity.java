@@ -106,3 +106,4 @@ public class CustomerLoginActivity extends AppCompatActivity {
         firebaseAuth.removeAuthStateListener(authStateListener);
     }
 }
+

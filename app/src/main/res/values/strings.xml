@@ -5,7 +5,7 @@
     <string name="login">Login</string>
     <string name="registration">Registration</string>
     <string name="password">Password</string>
-    <string name="customer_registration">Customer</string>
+    <string name="customer_registration">Student</string>
     <string name="customer">Student</string>
     <string name="user_type">Bus Services</string>
     <string name="driver">Driver</string>
@@ -26,4 +26,8 @@
     <string name="students_approaching_bus">Students approaching Bus</string>
     <string name="school_student">School Student</string>
     <string name="school_bus_with_driver">School Bus with Driver</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="school_and_student">School and student</string>
+    <string name="title_activity_student_login_logout">StudentLoginLogout</string>
 </resources>

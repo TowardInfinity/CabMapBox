@@ -8,14 +8,14 @@ import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Button driver, customer;
+    private Button driver, student;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         driver = findViewById(R.id.driver);
-        customer = findViewById(R.id.customer);
+        student = findViewById(R.id.customer);
 
         driver.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -27,10 +27,10 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        customer.setOnClickListener(new View.OnClickListener() {
+        student.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, CustomerLoginActivity.class);
+                Intent intent = new Intent(MainActivity.this, StudentLoginLogout.class);
                 startActivity(intent);
                 finish();
                 return;

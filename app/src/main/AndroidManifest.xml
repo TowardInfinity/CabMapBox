@@ -4,7 +4,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
@@ -25,7 +25,11 @@
         <activity android:name=".CustomerLoginActivity" />
         <activity android:name=".Main2Activity" />
         <activity android:name=".DriverMapActivity" />
-        <activity android:name=".CustomerMapActivity"></activity>
+        <activity android:name=".CustomerMapActivity" />
+        <activity
+            android:name=".StudentLoginLogout"
+            android:label="@string/title_activity_student_login_logout"
+            android:theme="@style/AppTheme"></activity>
     </application>
 
 </manifest>
