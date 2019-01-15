@@ -30,4 +30,6 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="school_and_student">School and student</string>
     <string name="title_activity_student_login_logout">StudentLoginLogout</string>
+    <string name="title_activity_driver_login_logout">DriverLoginLogout</string>
+    <string name="student">Student</string>
 </resources>

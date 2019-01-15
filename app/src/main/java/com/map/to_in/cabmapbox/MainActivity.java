@@ -20,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
         driver.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, DriverLoginActivity.class);
+                Intent intent = new Intent(MainActivity.this, DriverLoginLogout.class);
                 startActivity(intent);
                 finish();
                 return;

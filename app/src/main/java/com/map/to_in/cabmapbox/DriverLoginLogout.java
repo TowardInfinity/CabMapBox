@@ -28,7 +28,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
-public class StudentLoginLogout extends AppCompatActivity {
+public class DriverLoginLogout extends AppCompatActivity {
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -51,7 +51,7 @@ public class StudentLoginLogout extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_student_login_logout);
+        setContentView(R.layout.activity_driver_login_logout);
 
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
@@ -73,7 +73,7 @@ public class StudentLoginLogout extends AppCompatActivity {
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                 if(user != null){
-                    Intent intent = new Intent(StudentLoginLogout.this, CustomerMapActivity.class);
+                    Intent intent = new Intent(DriverLoginLogout.this, DriverMapActivity.class);
                     startActivity(intent);
                     return;
                 }
@@ -85,7 +85,7 @@ public class StudentLoginLogout extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_student_login_logout, menu);
+        getMenuInflater().inflate(R.menu.menu_driver_login_logout, menu);
         return true;
     }
 
@@ -94,7 +94,7 @@ public class StudentLoginLogout extends AppCompatActivity {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+//        int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
 //        if (id == R.id.action_settings) {
@@ -132,7 +132,7 @@ public class StudentLoginLogout extends AppCompatActivity {
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-
+//            View rootView = inflater.inflate(R.layout.fragment_driver_login_logout, container, false);
 
             ImageView imageView;
             EditText email, password;
@@ -141,13 +141,17 @@ public class StudentLoginLogout extends AppCompatActivity {
             switch (getArguments().getInt(ARG_SECTION_NUMBER)){
                 case 1:
                     rootView = inflater.inflate(R.layout.fragment_login_, container, false);
+
                     imageView = rootView.findViewById(R.id.imageView2);
-                    imageView.setImageResource(R.drawable.school_student);
+                    imageView.setImageResource(R.drawable.school_schoolbus);
+
                     cons = rootView.findViewById(R.id.constant);
-                    cons.setText(getString(R.string.student));
+                    cons.setText(getString(R.string.driver));
+
                     email = rootView.findViewById(R.id.email);
                     password = rootView.findViewById(R.id.password);
                     Button login = rootView.findViewById(R.id.login);
+
                     login.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
@@ -169,13 +173,17 @@ public class StudentLoginLogout extends AppCompatActivity {
                     break;
                 case 2:
                     rootView = inflater.inflate(R.layout.fragment_registration_, container, false);
+
                     imageView = rootView.findViewById(R.id.imageView2);
-                    imageView.setImageResource(R.drawable.school_student);
+                    imageView.setImageResource(R.drawable.school_schoolbus);
+
                     cons = rootView.findViewById(R.id.constant);
-                    cons.setText(getString(R.string.student));
+                    cons.setText(getString(R.string.driver));
+
                     email = rootView.findViewById(R.id.email);
                     password = rootView.findViewById(R.id.password);
                     Button registration = rootView.findViewById(R.id.registration);
+
                     registration.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
@@ -202,6 +210,7 @@ public class StudentLoginLogout extends AppCompatActivity {
 
                     break;
             }
+
             return rootView;
         }
     }
