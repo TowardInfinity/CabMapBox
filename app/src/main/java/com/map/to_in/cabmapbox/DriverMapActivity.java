@@ -73,6 +73,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     private LocationRequest mLocationRequest;
     private String driverId = "";
     private FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+    private boolean state = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,6 +95,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
         logout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                state = false;
                 clearDatabase();
                 FirebaseAuth.getInstance().signOut();
                 Intent intent = new Intent(DriverMapActivity.this, MainActivity.class);
@@ -126,7 +128,8 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference("DriverAvailable");
         GeoFire geoFire = new GeoFire(ref);
         geoFire.removeLocation(driverId);
-        customerID="";
+        customerID = "";
+        driverId = "";
     }
 
 
@@ -198,7 +201,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     }
 
     private void getRoute(Point origin, Point destination){
-        NavigationRoute.builder(this)
+        NavigationRoute.builder(DriverMapActivity.this)
             .accessToken(Mapbox.getAccessToken())
             .origin(origin)
             .destination(destination)
@@ -268,47 +271,48 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     @SuppressLint("MissingPermission")
     @Override
     public void onLocationChanged(Location location) {
+        if(state) {
 //        shareDriverLocation(customerID);
-        mFusedLocationClient.getLastLocation()
-            .addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                @Override
-                public void onSuccess(Location location) {
-                    // Got last known location. In some rare situations this can be null.
-                    if (location != null) {
-                        // Logic to handle location object
-                        myLocation = location;
-                        setCameraPosition(location);
-                        String userId;
-                        try {
-                            userId = user.getUid();
-                            DatabaseReference refAvailable = FirebaseDatabase.getInstance().getReference("DriverAvailable");
-                            DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("DriverWorking");
-                            GeoFire geoFireAvailable = new GeoFire(refAvailable);
-                            GeoFire geoFireWorking = new GeoFire(refWorking);
+            mFusedLocationClient.getLastLocation()
+                    .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(Location location) {
+                            // Got last known location. In some rare situations this can be null.
+                            if (location != null) {
+                                // Logic to handle location object
+                                myLocation = location;
+                                setCameraPosition(location);
+                                String userId;
+                                try {
+                                    userId = user.getUid();
+                                    DatabaseReference refAvailable = FirebaseDatabase.getInstance().getReference("DriverAvailable");
+                                    DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("DriverWorking");
+                                    GeoFire geoFireAvailable = new GeoFire(refAvailable);
+                                    GeoFire geoFireWorking = new GeoFire(refWorking);
 
-                            switch (customerID) {
-                                case "":
-                                    geoFireWorking.removeLocation(userId);
-                                    geoFireAvailable.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
-                                    break;
-                                default:
-                                    geoFireAvailable.removeLocation(userId);
-                                    geoFireWorking.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
-                                    break;
-                            }
-                            driverId = userId;
-                        } catch (Exception t){
+                                    switch (customerID) {
+                                        case "":
+                                            geoFireWorking.removeLocation(userId);
+                                            geoFireAvailable.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
+                                            break;
+                                        default:
+                                            geoFireAvailable.removeLocation(userId);
+                                            geoFireWorking.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
+                                            break;
+                                    }
+                                    driverId = userId;
+                                } catch (Exception t) {
 //                            Toast.makeText(getApplicationContext(), "User Id Not Found", Toast.LENGTH_LONG).show();
-                            finish();
-                            return;
-                        }
+                                    finish();
+                                    return;
+                                }
 
-                    }
-                    else{
-                        Toast.makeText(getApplicationContext(), "Location Not Found.", Toast.LENGTH_LONG).show();
-                    }
-                }
-            });
+                            } else {
+                                Toast.makeText(getApplicationContext(), "Location Not Found.", Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    });
+        }
     }
     private void setCameraPosition(Location location) {
         mapboxMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(),

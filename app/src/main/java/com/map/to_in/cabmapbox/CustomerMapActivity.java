@@ -30,6 +30,9 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
+import com.mapbox.api.directions.v5.models.DirectionsResponse;
+import com.mapbox.api.directions.v5.models.DirectionsRoute;
+import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.Marker;
@@ -41,9 +44,15 @@ import com.mapbox.mapboxsdk.location.modes.CameraMode;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
+import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute;
+import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute;
 
 import java.util.HashMap;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 
 public class CustomerMapActivity extends AppCompatActivity implements OnMapReadyCallback, PermissionsListener,
@@ -66,6 +75,12 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     private int radius = 1;
     private Boolean driverFound = false;
     private String driverFoundID;
+
+    private NavigationMapRoute navigationMapRoute;
+    private DirectionsRoute currentRoute;
+    private boolean state = true;
+
+    private LatLng origincord;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,6 +116,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
         logout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                state = false;
                 clearDatabase();
                 FirebaseAuth.getInstance().signOut();
                 Intent intent = new Intent(CustomerMapActivity.this, MainActivity.class);
@@ -123,6 +139,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference("CustomerRequest");
         GeoFire geoFire = new GeoFire(ref);
         geoFire.removeLocation(customerID);
+        customerID = "";
     }
 
     @SuppressLint("MissingPermission")
@@ -229,6 +246,8 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
                     marker = mapboxMap.addMarker(new MarkerOptions().position(driverLatLng)
                             .title("Your Driver").setIcon(IconFactory.getInstance(CustomerMapActivity.this)
                                     .fromResource(R.drawable.icons8_car_top_view_32)));
+                    getRoute(Point.fromLngLat(myLocation.getLongitude(), myLocation.getLatitude()),
+                            Point.fromLngLat(driverLatLng.getLongitude(), driverLatLng.getLatitude()));
                 }
             }
 
@@ -240,7 +259,44 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
         });
     }
 
-    @SuppressLint("MissingPermission")
+    private void getRoute(Point origin, Point destination) {
+        NavigationRoute.builder(this)
+                .accessToken(Mapbox.getAccessToken())
+                .origin(origin)
+                .destination(destination)
+                .build()
+                .getRoute(new Callback<DirectionsResponse>() {
+                    @Override
+                    public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
+                        // You can get the generic HTTP info about the response
+                        Log.d(TAG, "Response code: " + response.code());
+                        if (response.body() == null) {
+                            Log.e(TAG, "No routes found, make sure you set the right user and access token.");
+                            return;
+                        } else if (response.body().routes().size() < 1) {
+                            Log.e(TAG, "No routes found");
+                            return;
+                        }
+
+                        currentRoute = response.body().routes().get(0);
+
+                        // Draw the route on the map
+                        if (navigationMapRoute != null) {
+                            navigationMapRoute.removeRoute();
+                        } else {
+                            navigationMapRoute = new NavigationMapRoute(null, mapView, mapboxMap, R.style.NavigationMapRoute);
+                        }
+                        navigationMapRoute.addRoute(currentRoute);
+                    }
+
+                    @Override
+                    public void onFailure(Call<DirectionsResponse> call, Throwable t) {
+                        Log.e(TAG, "Error: " + t.getMessage());
+                    }
+                });
+    }
+
+                    @SuppressLint("MissingPermission")
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         mLocationRequest = new LocationRequest();
@@ -263,27 +319,30 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     @SuppressLint("MissingPermission")
     @Override
     public void onLocationChanged(Location location) {
-        if(driverFoundID != null) {
-            getDriverLocation();
-        }
-        mFusedLocationClient.getLastLocation()
-            .addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                @Override
-                public void onSuccess(Location location) {
-                    if (location != null) {
-                        myLocation = location;
-                        setCameraPosition(location);
-                        try {
-                            String userID = user.getUid();
-                            DatabaseReference ref = FirebaseDatabase.getInstance().getReference("CustomerRequest");
-                            GeoFire geoFire = new GeoFire(ref);
-                            geoFire.setLocation(userID, new GeoLocation(location.getLatitude(), location.getLongitude()));
-                        }catch (Exception te){
-                            finish();
+        if(state) {
+            if (driverFoundID != null) {
+                getDriverLocation();
+            }
+            mFusedLocationClient.getLastLocation()
+                    .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(Location location) {
+                            if (location != null) {
+                                myLocation = location;
+                                origincord = new LatLng(location.getLatitude(), location.getLongitude());
+                                setCameraPosition(location);
+                                try {
+                                    String userID = user.getUid();
+                                    DatabaseReference ref = FirebaseDatabase.getInstance().getReference("CustomerRequest");
+                                    GeoFire geoFire = new GeoFire(ref);
+                                    geoFire.setLocation(userID, new GeoLocation(location.getLatitude(), location.getLongitude()));
+                                } catch (Exception te) {
+                                    finish();
+                                }
+                            }
                         }
-                    }
-                }
-            });
+                    });
+        }
     }
 
     private void setCameraPosition(Location location) {
