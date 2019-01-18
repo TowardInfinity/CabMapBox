@@ -67,7 +67,6 @@ public class CustomerLoginActivity extends AppCompatActivity {
                                     .getReference().child("Users").child("Customer").child(user_id);
                             current_user_db.setValue(true);
                             Toast.makeText(CustomerLoginActivity.this, "User Id Created.", Toast.LENGTH_SHORT).show();
-
                         }
                     }
                 });

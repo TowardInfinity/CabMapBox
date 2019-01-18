@@ -18,7 +18,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -27,6 +26,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.tapadoo.alerter.Alerter;
 
 public class StudentLoginLogout extends AppCompatActivity {
 
@@ -158,9 +158,28 @@ public class StudentLoginLogout extends AppCompatActivity {
                                     @Override
                                     public void onComplete(@NonNull Task<AuthResult> task) {
                                         if(!task.isSuccessful()) {
-                                            Toast.makeText(getActivity(), "Sign In Error", Toast.LENGTH_SHORT).show();
+//                                            Toast.makeText(getActivity(), "Sign In Error", Toast.LENGTH_SHORT).show();
+                                            Alerter.create(getActivity())
+                                                    .setText("User id does not exists.")
+                                                    .enableProgress(true)
+                                                    .enableSwipeToDismiss()
+                                                    .setBackgroundColorInt(R.color.mapbox_blue)
+                                                    .setIcon(R.drawable.alert_progress_drawable)
+                                                    .setIconColorFilter(0)
+                                                    .show();
+
+
                                         }else{
-                                            Toast.makeText(getActivity(), "Logging In", Toast.LENGTH_SHORT).show();
+//                                            Toast.makeText(getActivity(), "Logging In", Toast.LENGTH_SHORT).show();
+                                            Alerter.create(getActivity())
+                                                    .setText("Logging In")
+                                                    .enableProgress(true)
+                                                    .enableSwipeToDismiss()
+                                                    .setBackgroundColorInt(R.color.mapbox_blue)
+                                                    .setIcon(R.drawable.alert_progress_drawable)
+                                                    .setIconColorFilter(0)
+                                                    .show();
+
                                         }
                                     }
                                 });
@@ -186,14 +205,29 @@ public class StudentLoginLogout extends AppCompatActivity {
                                     @Override
                                     public void onComplete(@NonNull Task<AuthResult> task) {
                                         if(!task.isSuccessful()) {
-                                            Toast.makeText(getActivity(), "Sign Up Error", Toast.LENGTH_SHORT).show();
+//                                            Toast.makeText(getActivity(), "Sign Up Error", Toast.LENGTH_SHORT).show();
+                                            Alerter.create(getActivity())
+                                                    .setText("User Id Already exists")
+                                                    .enableProgress(true)
+                                                    .enableSwipeToDismiss()
+                                                    .setIcon(R.drawable.alert_progress_drawable)
+                                                    .setBackgroundColorInt(R.color.mapbox_blue)
+                                                    .setIconColorFilter(0)
+                                                    .show();
                                         }else{
+                                            Alerter.create(getActivity())
+                                                    .setText("Creating User Id")
+                                                    .enableProgress(true)
+                                                    .enableSwipeToDismiss()
+                                                    .setIcon(R.drawable.alert_progress_drawable)
+                                                    .setBackgroundColorInt(R.color.mapbox_blue)
+                                                    .setIconColorFilter(0)
+                                                    .show();
                                             String user_id = firebaseAuth.getCurrentUser().getUid();
                                             DatabaseReference current_user_db = FirebaseDatabase.getInstance()
                                                     .getReference().child("Users").child("Customer").child(user_id);
                                             current_user_db.setValue(true);
-                                            Toast.makeText(getActivity(), "User Id Created.", Toast.LENGTH_SHORT).show();
-
+//                                            Toast.makeText(getActivity(), "User Id Created.", Toast.LENGTH_SHORT).show();
                                         }
                                     }
                                 });

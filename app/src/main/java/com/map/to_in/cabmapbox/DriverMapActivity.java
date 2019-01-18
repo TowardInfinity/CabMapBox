@@ -46,6 +46,7 @@ import com.mapbox.services.android.navigation.ui.v5.NavigationLauncher;
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncherOptions;
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute;
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute;
+import com.tapadoo.alerter.Alerter;
 
 import java.util.HashMap;
 import java.util.List;
@@ -165,10 +166,28 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
                         String customerID = dataMap.get("CustomerRideID").toString();
                         locationLat = Double.parseDouble(dataMap.get("destinationLat").toString());
                         locationLng = Double.parseDouble(dataMap.get("destinationLng").toString());
-                        Toast.makeText(getApplicationContext(),"Destination to Customer Found, Directing you there.", Toast.LENGTH_LONG).show();
+//                        Toast.makeText(getApplicationContext(),"Destination to Customer Found, Directing you there.", Toast.LENGTH_LONG).show();
+                        Alerter.create(DriverMapActivity.this)
+                                .setTitle("Customer Found ")
+                                .setText("Directing You there.")
+                                .enableProgress(true)
+                                .enableSwipeToDismiss()
+                                .setBackgroundColorInt(R.color.mapbox_blue)
+                                .setIcon(R.drawable.alert_progress_drawable)
+                                .setIconColorFilter(0)
+                                .show();
                         shareDriverLocation(customerID);
                     }else{
-                        Toast.makeText(getApplicationContext(),"Destination to Customer Not Found.", Toast.LENGTH_LONG).show();
+//                        Toast.makeText(getApplicationContext(),"Destination to Customer Not Found.", Toast.LENGTH_LONG).show();
+                        Alerter.create(DriverMapActivity.this)
+                                .setTitle("Customer Not Found")
+                                .setText("No Customer are looking for driver.")
+                                .enableProgress(false)
+                                .enableSwipeToDismiss()
+                                .setBackgroundColorInt(R.color.mapbox_blue)
+                                .setIcon(R.drawable.alert_progress_drawable)
+                                .setIconColorFilter(0)
+                                .show();
                     }
                     LatLng pickUpLocation = new LatLng(locationLat, locationLng);
                     mapboxMap.addMarker(new MarkerOptions().position(pickUpLocation).title("Pickup Location")
