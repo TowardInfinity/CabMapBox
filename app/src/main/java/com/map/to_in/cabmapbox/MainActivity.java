@@ -17,14 +17,10 @@ public class MainActivity extends AppCompatActivity {
         driver = findViewById(R.id.driver);
         student = findViewById(R.id.customer);
 
-        driver.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, DriverLoginLogout.class);
-                startActivity(intent);
-                finish();
-                return;
-            }
+        driver.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, DriverLoginLogout.class);
+            startActivity(intent);
+            finish();
         });
 
         student.setOnClickListener(new View.OnClickListener() {
@@ -33,10 +29,8 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(MainActivity.this, StudentLoginLogout.class);
                 startActivity(intent);
                 finish();
-                return;
             }
         });
     }
-
 
 }

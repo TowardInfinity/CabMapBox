@@ -1,7 +1,5 @@
 package com.map.to_in.cabmapbox;
 
-import android.animation.TypeEvaluator;
-import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.location.Location;
@@ -10,8 +8,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.View;
-import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -25,7 +21,6 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseError;
@@ -41,8 +36,10 @@ import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.camera.CameraUpdate;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.location.LocationComponent;
 import com.mapbox.mapboxsdk.location.modes.CameraMode;
 import com.mapbox.mapboxsdk.maps.MapView;
@@ -51,6 +48,8 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute;
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute;
 import com.tapadoo.alerter.Alerter;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
@@ -62,7 +61,7 @@ import retrofit2.Response;
 public class CustomerMapActivity extends AppCompatActivity implements OnMapReadyCallback, PermissionsListener,
         GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener, GoogleApiClient.ConnectionCallbacks {
 
-    private Button logout, requestBtn, startbtn;
+    private Button logout, startBtn;
     private MapView mapView;
     private MapboxMap mapboxMap;
     private PermissionsManager permissionsManager;
@@ -91,7 +90,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
         super.onCreate(savedInstanceState);
         Mapbox.getInstance(this, getString(R.string.access_token));
         setContentView(R.layout.activity_customer_map);
-        mapView = (MapView) findViewById(R.id.mapViewCustomer);
+        mapView = findViewById(R.id.mapViewCustomer);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -102,44 +101,27 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
         CustomerMapActivity.this.mapboxMap = mapboxMap;
         enableLocation();
         buildGoogleApiClient();
-        startbtn = findViewById(R.id.startCus);
-        startbtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        startBtn = findViewById(R.id.startCus);
+        startBtn.setOnClickListener(v -> {
 //                originCoord = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
-                CustomerMapActivity.this.mapboxMap.addMarker(new MarkerOptions().
-                        position(new LatLng(myLocation.getLatitude(), myLocation.getLongitude()))
-                        .title("Pickup Here").setIcon(IconFactory.getInstance(CustomerMapActivity.this)
-                                .fromResource(R.drawable.icons8_street_view_32)));
-                requestBtn.setText(getString(R.string.getting_your_driver));
+            CustomerMapActivity.this.mapboxMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(myLocation.getLatitude(), myLocation.getLongitude()))
+                    .title("Pickup Here").setIcon(IconFactory.getInstance(CustomerMapActivity.this)
+                    .fromResource(R.drawable.icons8_street_view_32)));
 
-                getClosestDriver();
-            }
+            getClosestDriver();
         });
         logout = findViewById(R.id.logout);
-        logout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                state = false;
-                clearDatabase();
-                FirebaseAuth.getInstance().signOut();
-                Intent intent = new Intent(CustomerMapActivity.this, MainActivity.class);
-                startActivity(intent);
-                finish();
-                return;
-            }
-        });
-
-        requestBtn = findViewById(R.id.request);
-        requestBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
+        logout.setOnClickListener(v -> {
+            state = false;
+            FirebaseAuth.getInstance().signOut();
+            Intent intent = new Intent(CustomerMapActivity.this, MainActivity.class);
+            startActivity(intent);
+            finish();
         });
     }
 
-    private void clearDatabase(){
+    private void clearDatabase() {
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference("CustomerRequest");
         GeoFire geoFire = new GeoFire(ref);
         geoFire.removeLocation(customerID);
@@ -197,7 +179,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
                     DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference()
                             .child("Users").child("Driver").child(driverFoundID).child("Request");
                     customerID = user.getUid();
-                    HashMap<String, Object> dataMap = new HashMap<String, Object>( );
+                    HashMap<String, Object> dataMap = new HashMap<>();
                     dataMap.put("CustomerRideID", customerID);
                     dataMap.put("destinationLat", myLocation.getLatitude());
                     dataMap.put("destinationLng", myLocation.getLongitude());
@@ -209,10 +191,9 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
                             .enableProgress(false)
                             .setBackgroundColorInt(R.color.mapbox_blue)
                             .enableSwipeToDismiss()
-                            .setIcon(R.drawable.alert_progress_drawable)
+                            .setIcon(R.drawable.ic_directions_car_black_24dp)
                             .setIconColorFilter(0)
                             .show();
-                    requestBtn.setText(getString(R.string.DriverSearch));
                     getDriverLocation();
                 }
             }
@@ -223,7 +204,6 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
 
             @Override
             public void onKeyMoved(String key, GeoLocation location) {
-
             }
 
             @Override
@@ -237,7 +217,6 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
 
             @Override
             public void onGeoQueryError(DatabaseError error) {
-
             }
         });
     }
@@ -261,7 +240,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
                                     .fromResource(R.drawable.icons8_car_top_view_32)));
                     getRoute(Point.fromLngLat(myLocation.getLongitude(), myLocation.getLatitude()),
                             Point.fromLngLat(driverLatLng.getLongitude(), driverLatLng.getLatitude()));
-                    animate(driverLatLng);
+//                    animate(driverLatLng);
                 }
             }
 
@@ -274,6 +253,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     }
 
     private void getRoute(Point origin, Point destination) {
+        assert Mapbox.getAccessToken() != null;
         NavigationRoute.builder(this)
                 .accessToken(Mapbox.getAccessToken())
                 .origin(origin)
@@ -283,7 +263,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
                 .build()
                 .getRoute(new Callback<DirectionsResponse>() {
                     @Override
-                    public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
+                    public void onResponse(@NotNull Call<DirectionsResponse> call, @NotNull Response<DirectionsResponse> response) {
                         // You can get the generic HTTP info about the response
                         Log.d(TAG, "Response code: " + response.code());
                         if (response.body() == null) {
@@ -296,6 +276,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
 
                         currentRoute = response.body().routes().get(0);
 
+                        //noinspection ConstantConditions
                         String text = "Distance: " + Math.round(((currentRoute.distance())/1000.0) * 100.0)/100.0
                                 + " Kilometre Duration: " + Math.round(((currentRoute.duration())/60.0)*100.0)/100.0 + " Minutes";
                         Alerter.create(CustomerMapActivity.this)
@@ -319,7 +300,7 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
                     }
 
                     @Override
-                    public void onFailure(Call<DirectionsResponse> call, Throwable t) {
+                    public void onFailure(@NotNull Call<DirectionsResponse> call, @NotNull Throwable t) {
                         Log.e(TAG, "Error: " + t.getMessage());
                     }
                 });
@@ -329,20 +310,18 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(1000);
-        mLocationRequest.setFastestInterval(1000);
+        mLocationRequest.setInterval(5000);
+        mLocationRequest.setFastestInterval(5000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY); //high Accuracy decrease if needed
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
     }
 
     @Override
     public void onConnectionSuspended(int i) {
-
     }
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
     }
 
     @SuppressLint("MissingPermission")
@@ -353,46 +332,64 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
                 getDriverLocation();
             }
             mFusedLocationClient.getLastLocation()
-                    .addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                        @Override
-                        public void onSuccess(Location location) {
-                            if (location != null) {
-                                myLocation = location;
-                                origincord = new LatLng(location.getLatitude(), location.getLongitude());
-                                setCameraPosition(location);
-                                try {
-                                    String userID = user.getUid();
-                                    DatabaseReference ref = FirebaseDatabase.getInstance().getReference("CustomerRequest");
-                                    GeoFire geoFire = new GeoFire(ref);
-                                    geoFire.setLocation(userID, new GeoLocation(location.getLatitude(), location.getLongitude()));
-                                } catch (Exception te) {
-                                    finish();
-                                }
+                    .addOnSuccessListener(this, location1 -> {
+                        if (location1 != null) {
+                            myLocation = location1;
+                            origincord = new LatLng(location1.getLatitude(), location1.getLongitude());
+                            setCameraPosition(location1);
+                            try {
+                                String userID = user.getUid();
+                                DatabaseReference ref = FirebaseDatabase.getInstance().getReference("CustomerRequest");
+                                GeoFire geoFire = new GeoFire(ref);
+                                geoFire.setLocation(userID, new GeoLocation(location1.getLatitude(), location1.getLongitude()));
+                            } catch (Exception te) {
+                                finish();
                             }
                         }
                     });
         }
     }
 
-    private void animate(LatLng destLatLng){
-        double[] startValues = new double[]{marker.getPosition().getLatitude(), marker.getPosition().getLongitude()};
-        double[] endValues = new double[]{destLatLng.getLatitude(), destLatLng.getLongitude()};
-        ValueAnimator latLngAnimator = ValueAnimator.ofObject(new DoubleArrayEvaluator(), startValues, endValues);
-        latLngAnimator.setDuration(600);
-        latLngAnimator.setInterpolator(new DecelerateInterpolator());
-        latLngAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                double[] animatedValue = (double[]) animation.getAnimatedValue();
-                marker.setPosition(new LatLng(animatedValue[0], animatedValue[1]));
-            }
-        });
-        latLngAnimator.start();
-    }
+//    private void animate(LatLng destLatLng){
+//        double[] startValues = new double[]{marker.getPosition().getLatitude(), marker.getPosition().getLongitude()};
+//        double[] endValues = new double[]{destLatLng.getLatitude(), destLatLng.getLongitude()};
+//        ValueAnimator latLngAnimator = ValueAnimator.ofObject(new DoubleArrayEvaluator(), startValues, endValues);
+//        latLngAnimator.setDuration(600);
+//        latLngAnimator.setInterpolator(new DecelerateInterpolator());
+//        latLngAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+//            @Override
+//            public void onAnimationUpdate(ValueAnimator animation) {
+//                double[] animatedValue = (double[]) animation.getAnimatedValue();
+//                marker.setPosition(new LatLng(animatedValue[0], animatedValue[1]));
+//            }
+//        });
+//        latLngAnimator.start();
+//    }
 
     private void setCameraPosition(Location location) {
-        mapboxMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(),
+        if(mapboxMap.getMarkers().size() > 1) {
+            mapboxMap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(location.getLatitude(),
+                    location.getLongitude())));
+            cameraZoom();
+        }
+        else {
+            mapboxMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(),
                 location.getLongitude()), 13.0));
+        }
+    }
+    private void cameraZoom(){
+        List<Marker> markers = mapboxMap.getMarkers();
+        final int width = 256;
+        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+        for (Marker m : markers) {
+            builder.include(m.getPosition());
+        }
+        LatLngBounds bounds = builder.build();
+        int padding = ((width * 50) / 100); // offset from edges of the map
+        // in pixels
+        CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds,
+                padding);
+        mapboxMap.animateCamera(cu);
     }
 
     protected synchronized void buildGoogleApiClient(){
@@ -447,57 +444,57 @@ public class CustomerMapActivity extends AppCompatActivity implements OnMapReady
         mapView.onLowMemory();
     }
 
-    public class DoubleArrayEvaluator implements TypeEvaluator<double[]> {
-
-        private double[] mArray;
-
-        /**
-         * Create a DoubleArrayEvaluator that does not reuse the animated value. Care must be taken
-         * when using this option because on every evaluation a new <code>double[]</code> will be
-         * allocated.
-         *
-         * @see #DoubleArrayEvaluator(double[])
-         */
-        public DoubleArrayEvaluator() {
-        }
-
-        /**
-         * Create a DoubleArrayEvaluator that reuses <code>reuseArray</code> for every evaluate() call.
-         * Caution must be taken to ensure that the value returned from
-         * {@link android.animation.ValueAnimator#getAnimatedValue()} is not cached, modified, or
-         * used across threads. The value will be modified on each <code>evaluate()</code> call.
-         *
-         * @param reuseArray The array to modify and return from <code>evaluate</code>.
-         */
-        public DoubleArrayEvaluator(double[] reuseArray) {
-            mArray = reuseArray;
-        }
-
-        /**
-         * Interpolates the value at each index by the fraction. If
-         * {@link #DoubleArrayEvaluator(double[])} was used to construct this object,
-         * <code>reuseArray</code> will be returned, otherwise a new <code>double[]</code>
-         * will be returned.
-         *
-         * @param fraction   The fraction from the starting to the ending values
-         * @param startValue The start value.
-         * @param endValue   The end value.
-         * @return A <code>double[]</code> where each element is an interpolation between
-         * the same index in startValue and endValue.
-         */
-        @Override
-        public double[] evaluate(float fraction, double[] startValue, double[] endValue) {
-            double[] array = mArray;
-            if (array == null) {
-                array = new double[startValue.length];
-            }
-
-            for (int i = 0; i < array.length; i++) {
-                double start = startValue[i];
-                double end = endValue[i];
-                array[i] = start + (fraction * (end - start));
-            }
-            return array;
-        }
-    }
+//    public class DoubleArrayEvaluator implements TypeEvaluator<double[]> {
+//
+//        private double[] mArray;
+//
+//        /**
+//         * Create a DoubleArrayEvaluator that does not reuse the animated value. Care must be taken
+//         * when using this option because on every evaluation a new <code>double[]</code> will be
+//         * allocated.
+//         *
+//         * @see #DoubleArrayEvaluator(double[])
+//         */
+//        public DoubleArrayEvaluator() {
+//        }
+//
+//        /**
+//         * Create a DoubleArrayEvaluator that reuses <code>reuseArray</code> for every evaluate() call.
+//         * Caution must be taken to ensure that the value returned from
+//         * {@link android.animation.ValueAnimator#getAnimatedValue()} is not cached, modified, or
+//         * used across threads. The value will be modified on each <code>evaluate()</code> call.
+//         *
+//         * @param reuseArray The array to modify and return from <code>evaluate</code>.
+//         */
+//        public DoubleArrayEvaluator(double[] reuseArray) {
+//            mArray = reuseArray;
+//        }
+//
+//        /**
+//         * Interpolates the value at each index by the fraction. If
+//         * {@link #DoubleArrayEvaluator(double[])} was used to construct this object,
+//         * <code>reuseArray</code> will be returned, otherwise a new <code>double[]</code>
+//         * will be returned.
+//         *
+//         * @param fraction   The fraction from the starting to the ending values
+//         * @param startValue The start value.
+//         * @param endValue   The end value.
+//         * @return A <code>double[]</code> where each element is an interpolation between
+//         * the same index in startValue and endValue.
+//         */
+//        @Override
+//        public double[] evaluate(float fraction, double[] startValue, double[] endValue) {
+//            double[] array = mArray;
+//            if (array == null) {
+//                array = new double[startValue.length];
+//            }
+//
+//            for (int i = 0; i < array.length; i++) {
+//                double start = startValue[i];
+//                double end = endValue[i];
+//                array[i] = start + (fraction * (end - start));
+//            }
+//            return array;
+//        }
+//    }
 }

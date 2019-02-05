@@ -8,7 +8,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -19,7 +18,6 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -48,9 +46,12 @@ import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute;
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute;
 import com.tapadoo.alerter.Alerter;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -81,7 +82,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
         super.onCreate(savedInstanceState);
         Mapbox.getInstance(this, getString(R.string.access_token));
         setContentView(R.layout.activity_driver_map);
-        mapView = (MapView) findViewById(R.id.mapViewDriver);
+        mapView = findViewById(R.id.mapViewDriver);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -89,40 +90,28 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
 
     @Override
     public void onMapReady(MapboxMap mapboxMap) {
-        this.mapboxMap = mapboxMap;
+        DriverMapActivity.this.mapboxMap = mapboxMap;
         enableLocation();
         buildGoogleApiClient();
         logout = findViewById(R.id.logout);
-        logout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                state = false;
-                clearDatabase();
-                FirebaseAuth.getInstance().signOut();
-                Intent intent = new Intent(DriverMapActivity.this, MainActivity.class);
-                startActivity(intent);
-                finish();
-                return;
-            }
+        logout.setOnClickListener(v -> {
+            state = false;
+            clearDatabase();
+            FirebaseAuth.getInstance().signOut();
+            Intent intent = new Intent(DriverMapActivity.this, MainActivity.class);
+            startActivity(intent);
+            finish();
         });
         startNavigation = findViewById(R.id.startnav);
-        startNavigation.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                NavigationLauncherOptions options = NavigationLauncherOptions.builder()
-                        .directionsRoute(currentRoute)
-                        .shouldSimulateRoute(true)
-                        .build();
-                NavigationLauncher.startNavigation(DriverMapActivity.this, options);
-            }
+        startNavigation.setOnClickListener(v -> {
+            NavigationLauncherOptions options = NavigationLauncherOptions.builder()
+                    .directionsRoute(currentRoute)
+                    .shouldSimulateRoute(true)
+                    .build();
+            NavigationLauncher.startNavigation(DriverMapActivity.this, options);
         });
         startBtn = findViewById(R.id.startDrv);
-        startBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                getAssignedCustomer();
-            }
-        });
+        startBtn.setOnClickListener(v -> getAssignedCustomer());
     }
 
     private void clearDatabase(){
@@ -154,7 +143,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
                 .child("Users").child("Driver").child(driverId).child("Request").getRef();
         assignedCustomerRef.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
+            public void onDataChange(@NotNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
                     Toast.makeText(getApplicationContext(),"Customer Found.", Toast.LENGTH_LONG).show();
 //                    customerID = dataSnapshot.getKey();
@@ -162,10 +151,11 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
                     double locationLat = 25.625818;
                     double locationLng = 85.106596;
 
+                    assert dataMap != null;
                     if (dataMap.get("destinationLat") != null && dataMap.get("destinationLng") != null) {
-                        String customerID = dataMap.get("CustomerRideID").toString();
-                        locationLat = Double.parseDouble(dataMap.get("destinationLat").toString());
-                        locationLng = Double.parseDouble(dataMap.get("destinationLng").toString());
+                        String customerID = Objects.requireNonNull(dataMap.get("CustomerRideID")).toString();
+                        locationLat = Double.parseDouble(Objects.requireNonNull(dataMap.get("destinationLat")).toString());
+                        locationLng = Double.parseDouble(Objects.requireNonNull(dataMap.get("destinationLng")).toString());
 //                        Toast.makeText(getApplicationContext(),"Destination to Customer Found, Directing you there.", Toast.LENGTH_LONG).show();
                         Alerter.create(DriverMapActivity.this)
                                 .setTitle("Customer Found ")
@@ -203,7 +193,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
             }
 
             @Override
-            public void onCancelled(DatabaseError databaseError) {
+            public void onCancelled(@NotNull DatabaseError databaseError) {
                 Toast.makeText(getApplicationContext(),"Database Error.", Toast.LENGTH_LONG).show();
             }
         });
@@ -212,7 +202,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     private void shareDriverLocation(String ID){
         DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Customer").child(ID).child("Request");
         String driverID = user.getUid();
-        HashMap<String, Object> dataMap = new HashMap<String, Object>();
+        HashMap<String, Object> dataMap = new HashMap<>();
         dataMap.put("driverRideID", driverID);
         dataMap.put("destinationLat", myLocation.getLatitude());
         dataMap.put("destinationLng", myLocation.getLongitude());
@@ -220,6 +210,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     }
 
     private void getRoute(Point origin, Point destination){
+        assert Mapbox.getAccessToken() != null;
         NavigationRoute.builder(DriverMapActivity.this)
             .accessToken(Mapbox.getAccessToken())
             .origin(origin)
@@ -227,7 +218,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
             .build()
             .getRoute(new Callback<DirectionsResponse>() {
                 @Override
-                public void onResponse(Call<DirectionsResponse> call, retrofit2.Response<DirectionsResponse> response) {
+                public void onResponse(@NotNull Call<DirectionsResponse> call, @NotNull retrofit2.Response<DirectionsResponse> response) {
                     if(response.body() == null) {
                         Log.e(TAG, "No Routes found, chek right user and access token");
                         return;
@@ -245,7 +236,7 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
                 }
 
                 @Override
-                public void onFailure(Call<DirectionsResponse> call, Throwable t) {
+                public void onFailure(@NotNull Call<DirectionsResponse> call, @NotNull Throwable t) {
                     Log.e(TAG, "Error:" + t.getMessage());
                 }
             });
@@ -275,8 +266,8 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(1000);
-        mLocationRequest.setFastestInterval(1000);
+        mLocationRequest.setInterval(2000);
+        mLocationRequest.setFastestInterval(2000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
     }
@@ -293,42 +284,38 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
         if(state) {
 //        shareDriverLocation(customerID);
             mFusedLocationClient.getLastLocation()
-                    .addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                        @Override
-                        public void onSuccess(Location location) {
-                            // Got last known location. In some rare situations this can be null.
-                            if (location != null) {
-                                // Logic to handle location object
-                                myLocation = location;
-                                setCameraPosition(location);
-                                String userId;
-                                try {
-                                    userId = user.getUid();
-                                    DatabaseReference refAvailable = FirebaseDatabase.getInstance().getReference("DriverAvailable");
-                                    DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("DriverWorking");
-                                    GeoFire geoFireAvailable = new GeoFire(refAvailable);
-                                    GeoFire geoFireWorking = new GeoFire(refWorking);
+                    .addOnSuccessListener(this, location1 -> {
+                        // Got last known location. In some rare situations this can be null.
+                        if (location1 != null) {
+                            // Logic to handle location object
+                            myLocation = location1;
+                            setCameraPosition(location1);
+                            String userId;
+                            try {
+                                userId = user.getUid();
+                                DatabaseReference refAvailable = FirebaseDatabase.getInstance().getReference("DriverAvailable");
+                                DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("DriverWorking");
+                                GeoFire geoFireAvailable = new GeoFire(refAvailable);
+                                GeoFire geoFireWorking = new GeoFire(refWorking);
 
-                                    switch (customerID) {
-                                        case "":
-                                            geoFireWorking.removeLocation(userId);
-                                            geoFireAvailable.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
-                                            break;
-                                        default:
-                                            geoFireAvailable.removeLocation(userId);
-                                            geoFireWorking.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
-                                            break;
-                                    }
-                                    driverId = userId;
-                                } catch (Exception t) {
-//                            Toast.makeText(getApplicationContext(), "User Id Not Found", Toast.LENGTH_LONG).show();
-                                    finish();
-                                    return;
+                                switch (customerID) {
+                                    case "":
+                                        geoFireWorking.removeLocation(userId);
+                                        geoFireAvailable.setLocation(userId, new GeoLocation(location1.getLatitude(), location1.getLongitude()));
+                                        break;
+                                    default:
+                                        geoFireAvailable.removeLocation(userId);
+                                        geoFireWorking.setLocation(userId, new GeoLocation(location1.getLatitude(), location1.getLongitude()));
+                                        break;
                                 }
-
-                            } else {
-                                Toast.makeText(getApplicationContext(), "Location Not Found.", Toast.LENGTH_LONG).show();
+                                driverId = userId;
+                            } catch (Exception t) {
+//                            Toast.makeText(getApplicationContext(), "User Id Not Found", Toast.LENGTH_LONG).show();
+                                finish();
                             }
+
+                        } else {
+                            Toast.makeText(getApplicationContext(), "Location Not Found.", Toast.LENGTH_LONG).show();
                         }
                     });
         }
@@ -380,7 +367,6 @@ public class DriverMapActivity extends AppCompatActivity implements OnMapReadyCa
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mapView.onDestroy();
         mapView.onDestroy();
     }
 

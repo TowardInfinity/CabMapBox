@@ -34,7 +34,7 @@
         android:text="@string/start"
         mapbox:layout_constraintBottom_toBottomOf="parent"
         mapbox:layout_constraintEnd_toEndOf="parent"
-        mapbox:layout_constraintHorizontal_bias="0.643"
+        mapbox:layout_constraintHorizontal_bias="0.83"
         mapbox:layout_constraintStart_toEndOf="@+id/logout"
         mapbox:layout_constraintTop_toTopOf="parent"
         mapbox:layout_constraintVertical_bias="1.0" />
@@ -45,7 +45,7 @@
         android:layout_height="40dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="252dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         android:fontFamily="monospace"
         android:text="@string/logout"
@@ -55,25 +55,9 @@
         android:visibility="visible"
         mapbox:layout_constraintBottom_toBottomOf="parent"
         mapbox:layout_constraintEnd_toEndOf="parent"
-        mapbox:layout_constraintHorizontal_bias="0.837"
-        mapbox:layout_constraintStart_toStartOf="parent"
-        mapbox:layout_constraintTop_toBottomOf="@+id/mapViewCustomer"
-        mapbox:layout_constraintVertical_bias="1.0" />
-
-    <Button
-        android:id="@+id/request"
-        android:layout_width="339dp"
-        android:layout_height="45dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="10dp"
-        android:enabled="false"
-        android:text="@string/customer_start_navigation"
-        mapbox:layout_constraintBottom_toBottomOf="parent"
-        mapbox:layout_constraintEnd_toEndOf="parent"
-        mapbox:layout_constraintHorizontal_bias="0.724"
+        mapbox:layout_constraintHorizontal_bias="0.068"
         mapbox:layout_constraintStart_toStartOf="parent"
         mapbox:layout_constraintTop_toTopOf="parent"
-        mapbox:layout_constraintVertical_bias="0.015" />
+        mapbox:layout_constraintVertical_bias="1.0" />
 
 </android.support.constraint.ConstraintLayout>

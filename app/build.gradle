@@ -41,9 +41,9 @@ dependencies {
     //Google Play Services GMS
     implementation 'com.google.android.gms:play-services-location:16.0.0'
     //Firebase
-    implementation 'com.google.firebase:firebase-core:16.0.6'
+    implementation 'com.google.firebase:firebase-core:16.0.7'
     implementation 'com.google.firebase:firebase-auth:16.1.0'
-    implementation 'com.google.firebase:firebase-database:16.0.5'
+    implementation 'com.google.firebase:firebase-database:16.0.6'
 
     //MapBox
     implementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:6.8.1'
@@ -58,7 +58,10 @@ dependencies {
     implementation 'com.tapadoo.android:alerter:3.0.2'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
-    //kotlin
+    //Design
+    implementation 'com.android.support:design:28.0.0'
+    //Dextar Permission
+    implementation 'com.karumi:dexter:5.0.0'
 }
 
 apply plugin: 'com.google.gms.google-services'

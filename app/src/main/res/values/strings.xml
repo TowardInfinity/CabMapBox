@@ -26,10 +26,15 @@
     <string name="students_approaching_bus">Students approaching Bus</string>
     <string name="school_student">School Student</string>
     <string name="school_bus_with_driver">School Bus with Driver</string>
+    <string name="android_photo">Test Photo</string>
+    <string name="Open">Open</string>
+    <string name="Close">Close</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="school_and_student">School and student</string>
     <string name="title_activity_student_login_logout">StudentLoginLogout</string>
     <string name="title_activity_driver_login_logout">DriverLoginLogout</string>
     <string name="student">Student</string>
+    <string name="my_account">My Account</string>
+    <string name="settings">Settings</string>
 </resources>
